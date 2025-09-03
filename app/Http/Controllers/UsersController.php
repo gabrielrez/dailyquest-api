@@ -8,6 +8,6 @@ class UsersController extends Controller
 {
     public function profile(Request $request)
     {
-        return response()->json($request->user());
+        return $this->respond($request->user());
     }
 }
