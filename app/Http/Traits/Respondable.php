@@ -66,4 +66,36 @@ trait Respondable
 
         return response()->json($data, $status, $headers);
     }
+
+    /**
+     * Return a JSON response indicating that the requested resource was not found.
+     *
+     * @param string $message The error message to return (default: "Not Found").
+     * @param int    $status  The HTTP status code (default: 404).
+     * @param array  $headers Additional headers for the response.
+     *
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function failNotFound($message = 'Not Found', $status = 404, $headers = [])
+    {
+        return response()->json([
+            'message' => $message,
+        ], $status, $headers);
+    }
+
+    /**
+     * Return a JSON response indicating that the request is unauthorized.
+     *
+     * @param string $message The error message to return (default: "Unauthorized").
+     * @param int    $status  The HTTP status code (default: 401).
+     * @param array  $headers Additional headers for the response.
+     *
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function failUnauthorized($message = 'Unauthorized', $status = 401, $headers = [])
+    {
+        return response()->json([
+            'message' => $message,
+        ], $status, $headers);
+    }
 }

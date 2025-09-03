@@ -38,9 +38,7 @@ class AuthController extends Controller
             ->first();
 
         if (!$user || !Hash::check($request->password, $user->password)) {
-            return response()->json([
-                'message' => 'Invalid login credentials.',
-            ], 401);
+            return $this->failUnauthorized('Invalid login credentials');
         }
 
         $token = $user->createToken('auth_token')->plainTextToken;
