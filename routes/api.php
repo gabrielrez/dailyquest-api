@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\UsersController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', fn() => response()->json([
@@ -12,5 +13,5 @@ Route::post('/register', [AuthController::class, 'register'])->name('auth.regist
 Route::post('/logout', [AuthController::class, 'logout'])->name('auth.logout')->middleware('auth:sanctum');
 
 Route::middleware('auth:sanctum')->group(function () {
-    //
+    Route::get('/me', [UsersController::class, 'profile'])->name('users.profile');
 });
