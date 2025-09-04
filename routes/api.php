@@ -34,6 +34,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('collections/{collection}/goals/{goal}', [GoalsController::class, 'show'])->name('collections.goals.show');
     Route::post('collections/{collection}/goals', [GoalsController::class, 'store'])->name('collections.goals.store');
     Route::patch('collections/{collection}/goals/{goal}', [GoalsController::class, 'update'])->name('collections.goals.update');
+    Route::patch('collections/{collection}/goals/{goal}/toggle', [GoalsController::class, 'toggleComplete'])->name('collections.goals.toggle');
     Route::delete('collections/{collection}/goals/{goal}', [GoalsController::class, 'destroy'])->name('collections.goals.destroy');
 
     // Users (resource)
