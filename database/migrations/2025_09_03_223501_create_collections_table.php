@@ -20,6 +20,7 @@ return new class extends Migration
             $table->boolean('is_collaborative')->default(false);
             $table->string('status')->default('in_progress');
             $table->foreignId('owner_id')->constrained('users')->onDelete('cascade');
+            $table->date('expired_at')->nullable();
             $table->timestamps();
         });
     }
