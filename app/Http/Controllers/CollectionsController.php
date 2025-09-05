@@ -6,6 +6,7 @@ use App\Http\Requests\CollectionCreateRequest;
 use App\Http\Services\CollectionService;
 use App\Models\Collection;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class CollectionsController extends Controller
 {
@@ -41,12 +42,16 @@ class CollectionsController extends Controller
     {
         $user = $request->user();
 
-        $collection = Collection::create([
-            ...$request->validated(),
-            'owner_id' => $user->id,
-        ]);
+        $collection = DB::transaction(function () use ($request, $user) {
+            $collection = Collection::create([
+                ...$request->validated(),
+                'owner_id' => $user->id,
+            ]);
 
-        $collection->users()->attach($user->id);
+            $collection->users()->attach($user->id);
+
+            return $collection;
+        });
 
         return $this->respondCreated($collection);
     }
