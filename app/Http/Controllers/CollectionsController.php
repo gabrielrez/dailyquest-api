@@ -56,14 +56,30 @@ class CollectionsController extends Controller
         return $this->respondCreated($collection);
     }
 
-    public function update(Request $request, Collection $collection)
+    public function update(CollectionCreateRequest $request, Collection $collection)
     {
-        //
+        $user = $request->user();
+
+        if (!$collection->belongsToUser($user, owner_only: true)) {
+            return $this->failUnauthorized('You are not authorized to access this collection');
+        }
+
+        $collection->update($request->validated());
+
+        return $this->respondUpdated($collection);
     }
 
     public function destroy(Request $request, Collection $collection)
     {
-        //
+        $user = $request->user();
+
+        if (!$collection->belongsToUser($user, owner_only: true)) {
+            return $this->failUnauthorized('You are not authorized to access this collection');
+        }
+
+        $collection->delete();
+
+        return $this->respondDeleted($collection);
     }
 
     public function listUsers(Request $request, Collection $collection)

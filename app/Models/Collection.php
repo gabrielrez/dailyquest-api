@@ -71,8 +71,12 @@ class Collection extends Model
      * @param  \App\Models\User  $user
      * @return bool
      */
-    public function belongsToUser(User $user): bool
+    public function belongsToUser(User $user, bool $owner_only = false): bool
     {
+        if ($owner_only && $this->owner_id !== $user->id) {
+            return false;
+        }
+
         if ($this->owner_id === $user->id) {
             return true;
         }
