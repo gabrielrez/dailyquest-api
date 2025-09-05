@@ -2,9 +2,11 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\CollectionAddUserRequest;
 use App\Http\Requests\CollectionCreateRequest;
 use App\Http\Services\CollectionService;
 use App\Models\Collection;
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -30,7 +32,7 @@ class CollectionsController extends Controller
         $user = $request->user();
 
         if (!$collection->belongsToUser($user)) {
-            return $this->failUnauthorized('You are not authorized to access this collection');
+            return $this->failForbidden('You are not authorized to access this collection');
         }
 
         $collection->load(['owner', 'users', 'goals']);
@@ -61,7 +63,7 @@ class CollectionsController extends Controller
         $user = $request->user();
 
         if (!$collection->belongsToUser($user, owner_only: true)) {
-            return $this->failUnauthorized('You are not authorized to access this collection');
+            return $this->failForbidden('Only the owner can update this collection');
         }
 
         $collection->update($request->validated());
@@ -74,7 +76,7 @@ class CollectionsController extends Controller
         $user = $request->user();
 
         if (!$collection->belongsToUser($user, owner_only: true)) {
-            return $this->failUnauthorized('You are not authorized to access this collection');
+            return $this->failForbidden('Only the owner can delete this collection');
         }
 
         $collection->delete();
@@ -82,18 +84,46 @@ class CollectionsController extends Controller
         return $this->respondDeleted($collection);
     }
 
-    public function listUsers(Request $request, Collection $collection)
+    public function addUser(CollectionAddUserRequest $request, Collection $collection)
     {
-        //
+        $validated = $request->validated();
+        $user = $request->user();
+
+        if (!$collection->belongsToUser($user, owner_only: true)) {
+            return $this->failForbidden('Only the owner can add users to this collection');
+        }
+
+        if (!$user_to_add = User::where('email', $validated['user'])->first()) {
+            // TODO: Send email to user to invite to the collection
+            return $this->failNotFound('User not found');
+        }
+
+        $collection->users()->attach($user_to_add->id);
+
+        return $this->respondCreated('User added to collection');
     }
 
-    public function addUser(Request $request, Collection $collection)
+    public function removeUser(CollectionAddUserRequest $request, Collection $collection)
     {
-        //
-    }
+        $validated = $request->validated();
+        $user = $request->user();
 
-    public function removeUser(Request $request, Collection $collection)
-    {
-        //
+        if (!$collection->belongsToUser($user, owner_only: true)) {
+            return $this->failForbidden('Only the owner can remove users from this collection');
+        }
+
+        if (!$user_to_remove = User::where('email', $validated['user'])->first()) {
+            return $this->failNotFound('User not found');
+        }
+
+        if (!$collection->belongsToUser($user_to_remove)) {
+            return $this->failForbidden('The user is not a collaborator of this collection');
+        }
+
+        $collection->users()->detach($user_to_remove->id);
+
+        // TODO: Notify, somehow, the user that he was removed from the collection
+
+        return $this->respondDeleted('User removed from collection');
     }
 }

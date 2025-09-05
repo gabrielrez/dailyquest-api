@@ -98,4 +98,20 @@ trait Respondable
             'message' => $message,
         ], $status, $headers);
     }
+
+    /**
+     * Return a JSON response indicating that the request is forbidden.
+     *
+     * @param string $message The error message to return (default: "Forbidden").
+     * @param int    $status  The HTTP status code (default: 403).
+     * @param array  $headers Additional headers for the response.
+     *
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function failForbidden($message = 'Forbidden', $status = 403, $headers = [])
+    {
+        return response()->json([
+            'message' => $message,
+        ], $status, $headers);
+    }
 }

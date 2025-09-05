@@ -29,7 +29,6 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::delete('collections/{collection}', [CollectionsController::class, 'destroy'])->name('collections.destroy');
 
     // Users inside a collection (sub-resource)
-    Route::get('collections/{collection}/users', [CollectionsController::class, 'listUsers'])->name('collections.users.index');
     Route::post('collections/{collection}/users', [CollectionsController::class, 'addUser'])->name('collections.users.store');
     Route::delete('/collections/{collection}/users/{user}', [CollectionsController::class, 'removeUser'])->name('collections.users.destroy');
 
