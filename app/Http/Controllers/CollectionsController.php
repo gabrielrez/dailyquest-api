@@ -98,6 +98,10 @@ class CollectionsController extends Controller
             return $this->failNotFound('User not found');
         }
 
+        if ($collection->users()->where('user_id', $user_to_add->id)->exists()) {
+            return $this->failForbidden('User already added');
+        }
+
         $collection->users()->attach($user_to_add->id);
 
         return $this->respondCreated('User added to collection');
@@ -118,6 +122,10 @@ class CollectionsController extends Controller
 
         if (!$collection->belongsToUser($user_to_remove)) {
             return $this->failForbidden('The user is not a collaborator of this collection');
+        }
+
+        if ($collection->owner_id === $user_to_remove->id) {
+            return $this->failForbidden('Owner cannot be removed from their own collection');
         }
 
         $collection->users()->detach($user_to_remove->id);
