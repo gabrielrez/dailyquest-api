@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -62,5 +63,57 @@ class Collection extends Model
     public function goals(): HasMany
     {
         return $this->hasMany(Goal::class, 'collection_id');
+    }
+
+    /**
+     * Determine if the collection belongs to the given user.
+     *
+     * @param  \App\Models\User  $user
+     * @return bool
+     */
+    public function belongsToUser(User $user): bool
+    {
+        if ($this->owner_id === $user->id) {
+            return true;
+        }
+
+        return $this->users()->where('user_id', $user->id)->exists();
+    }
+
+    /**
+     * Scope a query to only include collections owned by the given user.
+     *
+     * @param  \Illuminate\Database\Eloquent\Builder  $query
+     * @param  int  $userId
+     * @return \Illuminate\Database\Eloquent\Builder
+     */
+    public function scopeOwnedBy(Builder $query, int $userId)
+    {
+        return $query->where('owner_id', $userId);
+    }
+
+    /**
+     * Scope a query to only include collections with the given status.
+     *
+     * @param  \Illuminate\Database\Eloquent\Builder  $query
+     * @param  string  $status
+     * @return \Illuminate\Database\Eloquent\Builder
+     */
+    public function scopeStatus(Builder $query, string $status)
+    {
+        return $query->where('status', $status);
+    }
+
+    /**
+     * Scope a query to only include collections for the given user (owner or collaborator).
+     *
+     * @param  \Illuminate\Database\Eloquent\Builder  $query
+     * @param  int  $userId
+     * @return \Illuminate\Database\Eloquent\Builder
+     */
+    public function scopeForUser(Builder $query, int $userId)
+    {
+        return $query->where('owner_id', $userId)
+            ->orWhereHas('users', fn($q) => $q->where('user_id', $userId));
     }
 }
