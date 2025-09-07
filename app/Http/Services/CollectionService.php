@@ -11,6 +11,13 @@ use Illuminate\Http\Request;
 
 class CollectionService
 {
+    /**
+     * Returns paginated collections filtered
+     *
+     * @param  Request  $request  The incoming request (filters: owner, status, per_page).
+     * @param  User     $user     The authenticated user.
+     * @return \Illuminate\Contracts\Pagination\LengthAwarePaginator
+     */
     public function filterPaginated(Request $request, User $user)
     {
         $query = Collection::with(['owner', 'users']);
@@ -26,29 +33,40 @@ class CollectionService
         return $query->paginate($request->get('per_page', 10));
     }
 
+    /**
+     * Add a user to a collection, or invite them to the collection if they're not already in it.
+     *
+     * @param  Collection  $collection  The collection to add the user to.
+     * @param  string      $email       The email of the user to add.
+     * @return string
+     */
     public function addOrInviteUser(Collection $collection, string $email)
     {
         $user = User::where('email', $email)->first();
 
-        if ($user) {
-            if ($collection->users()->where('user_id', $user->id)->exists()) {
-                throw new ConflictException('User already in collection');
-            }
-
-            $collection->users()->attach($user->id);
-
-            // TODO: Notify, somehow, the user that he was removed from the collection
-
-            return 'User added to collection';
+        if (!$user) {
+            // TODO: Send email to user to invite to the collection
+            return 'Invitation sent to user';
         }
 
-        // TODO: Send email to user to invite to the collection
+        if ($collection->users()->where('user_id', $user->id)->exists()) {
+            throw new ConflictException('User already in collection');
+        }
 
-        throw new NotFoundException('User not found'); // for now
+        $collection->users()->attach($user->id);
 
-        return 'Invitation sent to user';
+        // TODO: Notify, somehow, the user that he was removed from the collection
+
+        return 'User added to collection';
     }
 
+    /**
+     * Remove a user from a collection and notify them.
+     *
+     * @param  Collection  $collection  The collection to remove the user from.
+     * @param  string      $email       The email of the user to remove.
+     * @return string
+     */
     public function removeOrNotifyUser(Collection $collection, string $email)
     {
         $user_to_remove = User::where('email', $email)->first();
