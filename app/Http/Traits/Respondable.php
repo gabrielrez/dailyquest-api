@@ -68,50 +68,50 @@ trait Respondable
     }
 
     /**
-     * Return a JSON response indicating that the requested resource was not found.
+     * Throw a NotFoundException (HTTP 404).
      *
-     * @param string $message The error message to return (default: "Not Found").
-     * @param int    $status  The HTTP status code (default: 404).
-     * @param array  $headers Additional headers for the response.
-     *
-     * @return \Illuminate\Http\JsonResponse
+     * @param string $message Error message.
+     * @throws \App\Exceptions\NotFoundException
+     * @return never
      */
-    public function failNotFound($message = 'Not Found', $status = 404, $headers = [])
+    public function failNotFound($message = 'Not Found')
     {
-        return response()->json([
-            'message' => $message,
-        ], $status, $headers);
+        throw new \App\Exceptions\NotFoundException($message);
     }
 
     /**
-     * Return a JSON response indicating that the request is unauthorized.
+     * Throw an UnauthorizedException (HTTP 401).
      *
-     * @param string $message The error message to return (default: "Unauthorized").
-     * @param int    $status  The HTTP status code (default: 401).
-     * @param array  $headers Additional headers for the response.
-     *
-     * @return \Illuminate\Http\JsonResponse
+     * @param string $message Error message.
+     * @throws \App\Exceptions\UnauthorizedException
+     * @return never
      */
-    public function failUnauthorized($message = 'Unauthorized', $status = 401, $headers = [])
+    public function failUnauthorized($message = 'Unauthorized')
     {
-        return response()->json([
-            'message' => $message,
-        ], $status, $headers);
+        throw new \App\Exceptions\UnauthorizedException($message);
     }
 
     /**
-     * Return a JSON response indicating that the request is forbidden.
+     * Throw a ForbiddenException (HTTP 403).
      *
-     * @param string $message The error message to return (default: "Forbidden").
-     * @param int    $status  The HTTP status code (default: 403).
-     * @param array  $headers Additional headers for the response.
-     *
-     * @return \Illuminate\Http\JsonResponse
+     * @param string $message Error message.
+     * @throws \App\Exceptions\ForbiddenException
+     * @return never
      */
-    public function failForbidden($message = 'Forbidden', $status = 403, $headers = [])
+    public function failForbidden($message = 'Forbidden')
     {
-        return response()->json([
-            'message' => $message,
-        ], $status, $headers);
+        throw new \App\Exceptions\ForbiddenException($message);
+    }
+
+    /**
+     * Throw an UnprocessableEntityException (HTTP 422).
+     *
+     * @param string $message Error message.
+     * @throws \App\Exceptions\UnprocessableEntityException
+     * @return never
+     */
+    public function failUnprocessableEntity($message = 'Unprocessable Entity')
+    {
+        throw new \App\Exceptions\UnprocessableEntityException($message);
     }
 }

@@ -22,4 +22,9 @@ class CollectionService
 
         return $query->paginate($request->get('per_page', 10));
     }
+
+    public function addOrInviteUser(Collection $collection, string $user_email)
+    {
+        //
+    }
 }

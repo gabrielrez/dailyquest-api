@@ -93,13 +93,13 @@ class CollectionsController extends Controller
             return $this->failForbidden('Only the owner can add users to this collection');
         }
 
-        if (!$user_to_add = User::where('email', $validated['user'])->first()) {
-            // TODO: Send email to user to invite to the collection
+        if (!$user_to_add = User::where('email', $validated['user_email'])->first()) {
+            // TODO: Send email to user to invite to the collection (not if they're already in it)
             return $this->failNotFound('User not found');
         }
 
         if ($collection->users()->where('user_id', $user_to_add->id)->exists()) {
-            return $this->failForbidden('User already added');
+            return $this->failUnprocessableEntity('User already added');
         }
 
         $collection->users()->attach($user_to_add->id);
