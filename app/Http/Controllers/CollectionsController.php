@@ -6,7 +6,6 @@ use App\Http\Requests\CollectionAddUserRequest;
 use App\Http\Requests\CollectionCreateRequest;
 use App\Http\Services\CollectionService;
 use App\Models\Collection;
-use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -93,18 +92,9 @@ class CollectionsController extends Controller
             return $this->failForbidden('Only the owner can add users to this collection');
         }
 
-        if (!$user_to_add = User::where('email', $validated['user_email'])->first()) {
-            // TODO: Send email to user to invite to the collection (not if they're already in it)
-            return $this->failNotFound('User not found');
-        }
+        $response = $this->service->addOrInviteUser($collection, $validated['user_email']);
 
-        if ($collection->users()->where('user_id', $user_to_add->id)->exists()) {
-            return $this->failUnprocessableEntity('User already added');
-        }
-
-        $collection->users()->attach($user_to_add->id);
-
-        return $this->respondCreated('User added to collection');
+        return $this->respondCreated($response);
     }
 
     public function removeUser(CollectionAddUserRequest $request, Collection $collection)
@@ -116,22 +106,8 @@ class CollectionsController extends Controller
             return $this->failForbidden('Only the owner can remove users from this collection');
         }
 
-        if (!$user_to_remove = User::where('email', $validated['user'])->first()) {
-            return $this->failNotFound('User not found');
-        }
+        $response = $this->service->removeOrNotifyUser($collection, $validated['user_email']);
 
-        if (!$collection->belongsToUser($user_to_remove)) {
-            return $this->failForbidden('The user is not a collaborator of this collection');
-        }
-
-        if ($collection->owner_id === $user_to_remove->id) {
-            return $this->failForbidden('Owner cannot be removed from their own collection');
-        }
-
-        $collection->users()->detach($user_to_remove->id);
-
-        // TODO: Notify, somehow, the user that he was removed from the collection
-
-        return $this->respondDeleted('User removed from collection');
+        return $this->respondDeleted($response, 200);
     }
 }

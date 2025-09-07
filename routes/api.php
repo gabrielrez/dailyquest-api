@@ -30,7 +30,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // Users inside a collection (sub-resource)
     Route::post('collections/{collection}/users', [CollectionsController::class, 'addUser'])->name('collections.users.store');
-    Route::delete('/collections/{collection}/users/{user}', [CollectionsController::class, 'removeUser'])->name('collections.users.destroy');
+    Route::delete('/collections/{collection}/users', [CollectionsController::class, 'removeUser'])->name('collections.users.destroy');
 
     // Goals inside a collection (sub-resource)
     Route::get('collections/{collection}/goals', [GoalsController::class, 'index'])->name('collections.goals.index');
