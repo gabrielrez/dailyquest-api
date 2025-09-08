@@ -53,7 +53,7 @@ class CollectionService
             throw new ConflictException('User already in collection');
         }
 
-        $collection->users()->attach($user->id);
+        $collection->users()->attach($user->id); // just for now, soon the user will be invited and has to accept
 
         // TODO: Notify, somehow, the user that he was added to the collection
 
@@ -85,7 +85,7 @@ class CollectionService
 
         $collection->users()->detach($user_to_remove->id);
 
-        // TODO: Notify, somehow, the user that he was removed from the collection
+        // TODO: Notify, somehow, the user that he was removed from the collection (email and app notification)
 
         return 'User removed from collection';
     }
