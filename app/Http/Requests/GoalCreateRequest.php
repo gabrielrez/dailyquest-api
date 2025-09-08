@@ -2,12 +2,11 @@
 
 namespace App\Http\Requests;
 
-use App\Http\Enums\CollectionStatusEnum;
-use App\Models\Collection;
+use App\Http\Enums\GoalStatusEnum;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rules\Enum;
 
-class CollectionCreateRequest extends FormRequest
+class GoalCreateRequest extends FormRequest
 {
     /**
      * Determine if the user is authorized to make this request.
@@ -25,12 +24,9 @@ class CollectionCreateRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'name'             => 'required|string|max:255',
-            'description'      => 'nullable|string',
-            'cyclic'           => 'sometimes|boolean',
-            'deadline'         => 'sometimes|date|after:today',
-            'is_collaborative' => 'sometimes|boolean',
-            'status' => ['sometimes', new Enum(CollectionStatusEnum::class)],
+            'name' => 'required|string|max:45',
+            'description' => 'sometimes|string|max:255',
+            'status' => ['sometimes', new Enum(GoalStatusEnum::class)],
         ];
     }
 }

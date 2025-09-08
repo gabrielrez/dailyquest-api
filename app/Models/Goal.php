@@ -28,6 +28,11 @@ class Goal extends Model
         'owner_id',
     ];
 
+    protected $hidden = [
+        'created_at',
+        'updated_at',
+    ];
+
     /**
      * The collection this goal belongs to.
      *

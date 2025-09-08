@@ -2,33 +2,105 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\GoalCreateRequest;
+use App\Http\Requests\GoalUpdateStatusRequest;
 use App\Models\Collection;
 use App\Models\Goal;
 use Illuminate\Http\Request;
 
 class GoalsController extends Controller
 {
-    public function index(Request $request){
-        //
+    public function index(Request $request, Collection $collection)
+    {
+        if (!$collection->belongsToUser($request->user())) {
+            return $this->failForbidden('You are not authorized to access this collection');
+        }
+
+        return $this->respond($collection->goals()->with('owner')->get());
     }
 
-    public function show(Request $request, Collection $collection, Goal $goal){
-        //
+    public function show(Request $request, Collection $collection, Goal $goal)
+    {
+        $user = $request->user();
+
+        if (!$collection->belongsToUser($user)) {
+            return $this->failForbidden('You are not authorized to access this collection');
+        }
+
+        if ($goal->collection_id !== $collection->id) {
+            return $this->failNotFound('Goal not found in this collection');
+        }
+
+        return $this->respond($goal);
     }
 
-    public function store(Request $request, Collection $collection){
-        //
+    public function store(GoalCreateRequest $request, Collection $collection)
+    {
+        $user = $request->user();
+
+        if (!$collection->belongsToUser($user)) {
+            return $this->failForbidden('You are not authorized to access this collection');
+        }
+
+        $goal = Goal::create([
+            ...$request->validated(),
+            'collection_id' => $collection->id,
+            'owner_id' => $user->id,
+        ]);
+
+        return $this->respondCreated($goal);
     }
 
-    public function update(Request $request, Collection $collection, Goal $goal){
-        //
+    public function update(GoalCreateRequest $request, Collection $collection, Goal $goal)
+    {
+        $user = $request->user();
+
+        if (!$collection->belongsToUser($user, owner_only: true)) {
+            return $this->failForbidden('Only the owner of the collection can update goals');
+        }
+
+        if ($goal->collection_id !== $collection->id) {
+            return $this->failNotFound('Goal not found in this collection');
+        }
+
+        $goal->update($request->validated());
+
+        return $this->respondUpdated($goal);
     }
 
-    public function toggleComplete(Request $request, Collection $collection, Goal $goal){
-        //
+    public function updateStatus(GoalUpdateStatusRequest $request, Collection $collection, Goal $goal)
+    {
+        $user = $request->user();
+
+        if (!$collection->belongsToUser($user)) {
+            return $this->failForbidden('You are not authorized to access this collection');
+        }
+
+        if ($goal->collection_id !== $collection->id) {
+            return $this->failNotFound('Goal not found in this collection');
+        }
+
+        $goal->update([
+            'status' => $request->validated()['status'],
+        ]);
+
+        return $this->respond($goal);
     }
 
-    public function destroy(Request $request, Collection $collection, Goal $goal){
-        //
+    public function destroy(Request $request, Collection $collection, Goal $goal)
+    {
+        $user = $request->user();
+
+        if (!$collection->belongsToUser($user, owner_only: true)) {
+            return $this->failForbidden('Only the owner of the collection can delete goals');
+        }
+
+        if ($goal->collection_id !== $collection->id) {
+            return $this->failNotFound('Goal not found in this collection');
+        }
+
+        $goal->delete();
+
+        return $this->respondDeleted();
     }
 }

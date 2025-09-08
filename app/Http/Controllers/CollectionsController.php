@@ -80,7 +80,7 @@ class CollectionsController extends Controller
 
         $collection->delete();
 
-        return $this->respondDeleted($collection);
+        return $this->respondDeleted();
     }
 
     public function addUser(CollectionAddUserRequest $request, Collection $collection)

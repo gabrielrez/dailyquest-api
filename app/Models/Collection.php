@@ -35,6 +35,11 @@ class Collection extends Model
         'owner_id',
     ];
 
+    protected $hidden = [
+        'created_at',
+        'updated_at',
+    ];
+
     /**
      * The owner of the collection.
      *
