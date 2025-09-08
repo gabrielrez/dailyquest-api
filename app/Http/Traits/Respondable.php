@@ -2,6 +2,9 @@
 
 namespace App\Http\Traits;
 
+use Illuminate\Contracts\Pagination\LengthAwarePaginator;
+use Illuminate\Contracts\Pagination\Paginator;
+
 trait Respondable
 {
     /**
@@ -15,7 +18,19 @@ trait Respondable
      */
     public function respond($data, $status = 200, $headers = [])
     {
-        return response()->json($data, $status, $headers);
+        if ($data instanceof LengthAwarePaginator || $data instanceof Paginator) {
+            return response()->json($data, $status, $headers);
+        }
+
+        if (is_string($data)) {
+            return response()->json([
+                'message' => $data,
+            ], $status, $headers);
+        }
+
+        return response()->json([
+            'data' => $data,
+        ], $status, $headers);
     }
 
     /**
@@ -29,7 +44,7 @@ trait Respondable
      */
     public function respondCreated($data, $status = 201, $headers = [])
     {
-        return response()->json($data, $status, $headers);
+        return $this->respond($data, $status, $headers);
     }
 
     /**
@@ -43,7 +58,7 @@ trait Respondable
      */
     public function respondUpdated($data, $status = 200, $headers = [])
     {
-        return response()->json($data, $status, $headers);
+        return $this->respond($data, $status, $headers);
     }
 
     /**
@@ -64,7 +79,7 @@ trait Respondable
             return response()->noContent($status, $headers);
         }
 
-        return response()->json($data, $status, $headers);
+        return $this->respond($data, $status, $headers);
     }
 
     /**
