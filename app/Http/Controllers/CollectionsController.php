@@ -43,16 +43,21 @@ class CollectionsController extends Controller
     {
         $user = $request->user();
 
-        $collection = DB::transaction(function () use ($request, $user) {
-            $collection = Collection::create([
-                ...$request->validated(),
-                'owner_id' => $user->id,
-            ]);
+        // $collection = DB::transaction(function () use ($request, $user) {
+        //     $collection = Collection::create([
+        //         ...$request->validated(),
+        //         'owner_id' => $user->id,
+        //     ]);
 
-            $collection->users()->attach($user->id);
+        //     $collection->users()->attach($user->id);
 
-            return $collection;
-        });
+        //     return $collection;
+        // });
+
+        $collection = Collection::create([
+            ...$request->validated(),
+            'owner_id' => $user->id,
+        ]);
 
         return $this->respondCreated($collection);
     }
