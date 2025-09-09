@@ -12,6 +12,10 @@ class InvitationController extends Controller
     {
         $invitation = Invitation::where('token', $request->validated()['token'])->firstOrFail();
 
+        if ($invitation->isExpired()) {
+            return $this->failForbidden('Invitation has expired');
+        }
+
         if ($invitation->status === 'accepted') {
             return $this->failConflict('Invitation already accepted');
         }
