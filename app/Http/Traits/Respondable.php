@@ -129,4 +129,15 @@ trait Respondable
     {
         throw new \App\Exceptions\UnprocessableEntityException($message);
     }
+
+    /**
+     * Throw a ConflictException (HTTP 409).
+     *
+     * @param string $message Error message.
+     * @throws \App\Exceptions\ConflictException
+     */
+    public function failConflict($message = 'Conflict')
+    {
+        throw new \App\Exceptions\ConflictException($message);
+    }
 }

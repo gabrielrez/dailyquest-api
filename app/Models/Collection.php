@@ -72,6 +72,16 @@ class Collection extends Model
     }
 
     /**
+     * Invitations to the collection.
+     *
+     * @return HasMany<Invitation>
+     */
+    public function invitations(): HasMany
+    {
+        return $this->hasMany(Invitation::class);
+    }
+
+    /**
      * Determine if the collection belongs to the given user.
      *
      * @param  \App\Models\User  $user
