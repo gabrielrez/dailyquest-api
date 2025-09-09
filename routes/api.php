@@ -17,7 +17,7 @@ Route::post('login', [AuthController::class, 'login'])->name('auth.login');
 Route::post('register', [AuthController::class, 'register'])->name('auth.register');
 Route::post('logout', [AuthController::class, 'logout'])->name('auth.logout')->middleware('auth:sanctum');
 
-Route::post('/collections/invitations/accept', [InvitationController::class, 'accept']);
+Route::post('/collections/invitations/accept', [InvitationController::class, 'accept'])->name('invitations.accept');
 
 Route::middleware('auth:sanctum')->group(function () {
     // Collections (resource)
