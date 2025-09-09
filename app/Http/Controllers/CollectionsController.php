@@ -19,17 +19,14 @@ class CollectionsController extends Controller
 
     public function index(Request $request)
     {
-        $user = $request->user();
-        $collections = $this->service->filterPaginated($request, $user);
+        $collections = $this->service->filterPaginated($request, $request->user());
 
         return $this->respond($collections);
     }
 
     public function show(Request $request, Collection $collection)
     {
-        $user = $request->user();
-
-        if (!$collection->belongsToUser($user)) {
+        if (!$collection->belongsToUser($request->user())) {
             return $this->failForbidden('You are not authorized to access this collection');
         }
 
@@ -40,22 +37,9 @@ class CollectionsController extends Controller
 
     public function store(CollectionCreateRequest $request)
     {
-        $user = $request->user();
-
-        // $collection = DB::transaction(function () use ($request, $user) {
-        //     $collection = Collection::create([
-        //         ...$request->validated(),
-        //         'owner_id' => $user->id,
-        //     ]);
-
-        //     $collection->users()->attach($user->id);
-
-        //     return $collection;
-        // });
-
         $collection = Collection::create([
             ...$request->validated(),
-            'owner_id' => $user->id,
+            'owner_id' => $request->user()->id,
         ]);
 
         return $this->respondCreated($collection);
@@ -63,9 +47,7 @@ class CollectionsController extends Controller
 
     public function update(CollectionCreateRequest $request, Collection $collection)
     {
-        $user = $request->user();
-
-        if (!$collection->belongsToUser($user, owner_only: true)) {
+        if (!$collection->belongsToUser($request->user(), owner_only: true)) {
             return $this->failForbidden('Only the owner can update this collection');
         }
 
@@ -76,9 +58,7 @@ class CollectionsController extends Controller
 
     public function destroy(Request $request, Collection $collection)
     {
-        $user = $request->user();
-
-        if (!$collection->belongsToUser($user, owner_only: true)) {
+        if (!$collection->belongsToUser($request->user(), owner_only: true)) {
             return $this->failForbidden('Only the owner can delete this collection');
         }
 
@@ -108,13 +88,12 @@ class CollectionsController extends Controller
     public function removeUser(CollectionAddUserRequest $request, Collection $collection)
     {
         $validated = $request->validated();
-        $user = $request->user();
 
-        if (!$collection->belongsToUser($user, owner_only: true)) {
+        if (!$collection->belongsToUser($request->user(), owner_only: true)) {
             return $this->failForbidden('Only the owner can remove users from this collection');
         }
 
-        $response = $this->service->removeOrNotifyUser($collection, $validated['user_email']);
+        $response = $this->service->removeAndNotifyUser($collection, $validated['user_email']);
 
         return $this->respondDeleted($response, 200);
     }

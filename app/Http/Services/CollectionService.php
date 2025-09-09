@@ -6,6 +6,7 @@ use App\Exceptions\ConflictException;
 use App\Exceptions\ForbiddenException;
 use App\Exceptions\NotFoundException;
 use App\Mail\InvitationMail;
+use App\Mail\UserRemovedMail;
 use App\Models\Collection;
 use App\Models\Invitation;
 use App\Models\User;
@@ -78,7 +79,7 @@ class CollectionService
      * @param  string      $email       The email of the user to remove.
      * @return string
      */
-    public function removeOrNotifyUser(Collection $collection, string $email)
+    public function removeAndNotifyUser(Collection $collection, string $email)
     {
         $user_to_remove = User::where('email', $email)->first();
 
@@ -96,7 +97,7 @@ class CollectionService
 
         $collection->users()->detach($user_to_remove->id);
 
-        // TODO: Notify, somehow, the user that he was removed from the collection (email and app notification)
+        Mail::to($user_to_remove->email)->send(new UserRemovedMail($collection));
 
         return 'User removed from collection';
     }
