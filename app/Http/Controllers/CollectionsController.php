@@ -67,7 +67,7 @@ class CollectionsController extends Controller
         return $this->respondDeleted();
     }
 
-    public function addUser(CollectionAddUserRequest $request, Collection $collection)
+    public function inviteUser(CollectionAddUserRequest $request, Collection $collection)
     {
         $validated = $request->validated();
         $user = $request->user();
