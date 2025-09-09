@@ -17,7 +17,7 @@ return new class extends Migration
             $table->string('email');
             $table->string('token')->unique();
             $table->string('status')->default('pending');
-            $table->timestamp('expires_at')->default(now()->addDays(7));
+            $table->timestamp('expires_at')->default(now()->addDays(1));
             $table->timestamps();
         });
     }

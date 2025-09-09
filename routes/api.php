@@ -17,7 +17,7 @@ Route::post('login', [AuthController::class, 'login'])->name('auth.login');
 Route::post('register', [AuthController::class, 'register'])->name('auth.register');
 Route::post('logout', [AuthController::class, 'logout'])->name('auth.logout')->middleware('auth:sanctum');
 
-Route::post('/collections/invitations/accept', [InvitationController::class, 'accept']);
+Route::post('/collections/invitations/accept', [InvitationController::class, 'accept'])->name('invitations.accept');
 
 Route::middleware('auth:sanctum')->group(function () {
     // Collections (resource)
@@ -28,7 +28,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::delete('collections/{collection}', [CollectionsController::class, 'destroy'])->name('collections.destroy');
 
     // Users inside a collection (sub-resource)
-    Route::post('collections/{collection}/users', [CollectionsController::class, 'addUser'])->name('collections.users.store');
+    Route::post('collections/{collection}/users', [CollectionsController::class, 'inviteUser'])->name('collections.users.invite');
     Route::delete('/collections/{collection}/users', [CollectionsController::class, 'removeUser'])->name('collections.users.destroy');
 
     // Goals inside a collection (sub-resource)
