@@ -39,11 +39,10 @@ class CollectionService
     }
 
     /**
-     * Add a user to a collection and notify them, or invite them to the collection if they're not already in it.
+     * Invite a user to a collection.
      *
-     * @param  Collection  $collection  The collection to add the user to.
-     * @param  string      $email       The email of the user to add.
-     * @return string
+     * @param Collection $collection
+     * @param string $email
      */
     public function inviteUserToCollection(Collection $collection, string $email)
     {
