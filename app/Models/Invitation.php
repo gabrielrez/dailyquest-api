@@ -13,6 +13,11 @@ class Invitation extends Model
         'token',
         'status',
         'accepted',
+        'expires_at',
+    ];
+
+    protected $casts = [
+        'expires_at' => 'datetime',
     ];
 
     /**
@@ -23,5 +28,13 @@ class Invitation extends Model
     public function collection(): BelongsTo
     {
         return $this->belongsTo(Collection::class);
+    }
+
+    /**
+     * Determine if the invitation has expired.
+     */
+    public function isExpired(): bool
+    {
+        return $this->expires_at && $this->expires_at->isPast();
     }
 }
