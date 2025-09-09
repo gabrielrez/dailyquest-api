@@ -24,7 +24,7 @@ Ela fornece endpoints para:
 ### 📚 Coleções (Collections) *(requer autenticação)*
 | Método | Endpoint                        | Descrição |
 |--------|---------------------------------|------------|
-| GET    | `/collections`                  | Lista todas as coleções do usuário |
+| GET    | `/collections`                  | Lista todas as coleções do usuário autenticado |
 | GET    | `/collections/{collection}`     | Detalhes de uma coleção |
 | POST   | `/collections`                  | Cria uma nova coleção |
 | PUT    | `/collections/{collection}`     | Atualiza uma coleção existente |
@@ -33,7 +33,7 @@ Ela fornece endpoints para:
 #### 👥 Usuários dentro de uma coleção
 | Método | Endpoint                                | Descrição |
 |--------|------------------------------------------|------------|
-| POST   | `/collections/{collection}/users`        | Adiciona usuário a uma coleção |
+| POST   | `/collections/{collection}/users`        | Convida usuário a uma coleção |
 | DELETE | `/collections/{collection}/users`        | Remove usuário de uma coleção |
 
 #### 🎯 Metas (Goals) dentro de uma coleção
