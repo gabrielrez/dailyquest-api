@@ -7,7 +7,6 @@ use App\Http\Requests\CollectionCreateRequest;
 use App\Http\Services\CollectionService;
 use App\Models\Collection;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 
 class CollectionsController extends Controller
 {
@@ -97,7 +96,11 @@ class CollectionsController extends Controller
             return $this->failForbidden('Only the owner can add users to this collection');
         }
 
-        $response = $this->service->addOrInviteUser($collection, $validated['user_email']);
+        if ($user->email === $validated['user_email']) {
+            return $this->failForbidden('You cannot invite yourself to your own collection');
+        }
+
+        $response = $this->service->inviteUserToCollection($collection, $validated['user_email']);
 
         return $this->respondCreated($response);
     }

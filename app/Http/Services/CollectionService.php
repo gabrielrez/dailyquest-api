@@ -5,9 +5,13 @@ namespace App\Http\Services;
 use App\Exceptions\ConflictException;
 use App\Exceptions\ForbiddenException;
 use App\Exceptions\NotFoundException;
+use App\Mail\InvitationMail;
 use App\Models\Collection;
+use App\Models\Invitation;
 use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Str;
 
 class CollectionService
 {
@@ -40,24 +44,31 @@ class CollectionService
      * @param  string      $email       The email of the user to add.
      * @return string
      */
-    public function addOrInviteUser(Collection $collection, string $email)
+    public function inviteUserToCollection(Collection $collection, string $email)
     {
         $user = User::where('email', $email)->first();
 
+        $token = Str::random(40);
+
+        Invitation::create([
+            'collection_id' => $collection->id,
+            'email'         => $email,
+            'token'         => $token,
+        ]);
+
         if (!$user) {
-            // TODO: Send email to user to invite to the collection
-            return 'Invitation sent to user';
+            Mail::to($email)->send(new InvitationMail($collection, $token, is_new_user: true));
+
+            return 'Invitation sent to new user';
         }
 
         if ($collection->users()->where('user_id', $user->id)->exists()) {
             throw new ConflictException('User already in collection');
         }
 
-        $collection->users()->attach($user->id); // just for now, soon the user will be invited and has to accept
+        Mail::to($email)->send(new InvitationMail($collection, $token, is_new_user: false));
 
-        // TODO: Notify, somehow, the user that he was added to the collection
-
-        return 'User added to collection';
+        return 'Invitation sent to existing user';
     }
 
     /**

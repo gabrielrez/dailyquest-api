@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\UserLoginRequest;
 use App\Http\Requests\UserRegisterRequest;
+use App\Models\Invitation;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
@@ -20,6 +21,15 @@ class AuthController extends Controller
             'email'     => $validated['email'],
             'password'  => Hash::make($validated['password']),
         ]);
+
+        if (!empty($validated['token'])) {
+            $invitation = Invitation::where('token', $validated['token'])->first();
+
+            if ($invitation && $invitation->status === 'pending') {
+                $invitation->update(['status' => 'accepted']);
+                $invitation->collection->users()->attach($user->id);
+            }
+        }
 
         $token = $user->createToken('auth_token')->plainTextToken;
 
