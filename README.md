@@ -21,6 +21,13 @@ Ela fornece endpoints para:
 
 ---
 
+### 👤 Usuários *(requer autenticação)*
+| Método | Endpoint     | Descrição |
+|--------|--------------|------------|
+| GET    | `/users/me`  | Retorna o perfil do usuário autenticado |
+
+---
+
 ### 📚 Coleções (Collections) *(requer autenticação)*
 | Método | Endpoint                        | Descrição |
 |--------|---------------------------------|------------|
@@ -45,10 +52,3 @@ Ela fornece endpoints para:
 | PUT    | `/collections/{collection}/goals/{goal}`         | Atualiza meta existente |
 | PATCH  | `/collections/{collection}/goals/{goal}/status`  | Atualiza apenas o status da meta |
 | DELETE | `/collections/{collection}/goals/{goal}`         | Remove meta |
-
----
-
-### 👤 Usuários *(requer autenticação)*
-| Método | Endpoint     | Descrição |
-|--------|--------------|------------|
-| GET    | `/users/me`  | Retorna o perfil do usuário autenticado |
