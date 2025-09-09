@@ -7,8 +7,6 @@ use App\Http\Controllers\InvitationController;
 use App\Http\Controllers\UsersController;
 use Illuminate\Support\Facades\Route;
 
-// Try to keep a group's routes in alphabetical order
-
 Route::get('/', fn() => response()->json([
     'message' => 'Hello World, DailyQuest API!'
 ]));
