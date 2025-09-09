@@ -19,7 +19,7 @@ class CollectionFactory extends Factory
             'cyclic'           => false,
             'deadline'         => null,
             'is_collaborative' => true,
-            'status'           => $this->faker->randomElement(CollectionStatusEnum::notCompleted())->value,
+            'status'           => CollectionStatusEnum::IN_PROGRESS->value,
             'owner_id'         => User::factory(),
         ];
     }
