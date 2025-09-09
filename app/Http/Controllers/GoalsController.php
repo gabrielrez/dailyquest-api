@@ -4,12 +4,20 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\GoalCreateRequest;
 use App\Http\Requests\GoalUpdateStatusRequest;
+use App\Http\Services\GoalService;
 use App\Models\Collection;
 use App\Models\Goal;
 use Illuminate\Http\Request;
 
 class GoalsController extends Controller
 {
+    protected GoalService $service;
+
+    public function __construct()
+    {
+        $this->service = new GoalService();
+    }
+
     public function index(Request $request, Collection $collection)
     {
         if (!$collection->belongsToUser($request->user())) {
@@ -80,11 +88,9 @@ class GoalsController extends Controller
             return $this->failNotFound('Goal not found in this collection');
         }
 
-        $goal->update([
-            'status' => $request->validated()['status'],
-        ]);
+        $status = $request->validated()['status'];
 
-        return $this->respond($goal);
+        return $this->respond($this->service->updateGoalAndCollectionStatus($goal, $collection, $status));
     }
 
     public function destroy(Request $request, Collection $collection, Goal $goal)

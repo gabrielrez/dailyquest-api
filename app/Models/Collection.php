@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Http\Enums\GoalStatusEnum;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -124,5 +125,15 @@ class Collection extends Model
     {
         return $query->where('owner_id', $userId)
             ->orWhereHas('users', fn($q) => $q->where('user_id', $userId));
+    }
+
+    /**
+     * Returns true if all goals in the collection are complete.
+     */
+    public function isCompleted(): bool
+    {
+        return $this->goals()
+            ->where('status', '!=', GoalStatusEnum::DONE)
+            ->doesntExist();
     }
 }

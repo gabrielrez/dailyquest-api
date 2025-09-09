@@ -2,6 +2,7 @@
 
 namespace Database\Factories;
 
+use App\Http\Enums\CollectionStatusEnum;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
@@ -18,7 +19,7 @@ class CollectionFactory extends Factory
             'cyclic'           => false,
             'deadline'         => null,
             'is_collaborative' => true,
-            'status'           => $this->faker->randomElement(['in_progress', 'completed']),
+            'status'           => $this->faker->randomElement(CollectionStatusEnum::notCompleted())->value,
             'owner_id'         => User::factory(),
         ];
     }

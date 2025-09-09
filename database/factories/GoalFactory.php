@@ -2,6 +2,7 @@
 
 namespace Database\Factories;
 
+use App\Http\Enums\GoalStatusEnum;
 use App\Models\Collection;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
@@ -16,7 +17,7 @@ class GoalFactory extends Factory
         return [
             'name'         => $this->faker->words(3, true),
             'description'  => $this->faker->sentence(10),
-            'status'       => $this->faker->randomElement(['to_do', 'in_progress', 'done']),
+            'status'       => $this->faker->randomElement(GoalStatusEnum::notCompleted())->value,
             'collection_id' => Collection::factory(),
             'owner_id'     => User::factory(),
         ];
