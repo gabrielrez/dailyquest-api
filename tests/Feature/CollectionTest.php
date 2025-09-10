@@ -28,8 +28,9 @@ class CollectionTest extends TestCase
                 'user_email' => 'newuser@example.com',
             ]);
 
-        $response->assertStatus(201)
-            ->assertJson(['message' => 'Invitation sent to new user']);
+        $response->assertStatus(201)->assertJsonStructure([
+            'data' => ['id', 'collection_id', 'email', 'token', 'created_at', 'updated_at',]
+        ]);
 
         $this->assertDatabaseHas('invitations', [
             'collection_id' => $collection->id,
