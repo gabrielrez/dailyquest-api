@@ -29,8 +29,8 @@ class InvitationMail extends Mailable
     public function content(): Content
     {
         $url = $this->is_new_user
-            ? config('app.url') . "/api/register?token={$this->token}"
-            : config('app.url') . "/api/collections/invitations/accept?token={$this->token}";
+            ? "/register-and-accept-invitation-route?token={$this->token}"
+            : "/accept-invitation-route?token={$this->token}";
 
         return new Content(
             view: 'emails.invitation',

@@ -25,6 +25,7 @@ class AuthController extends Controller
         if (!empty($validated['token'])) {
             $invitation = Invitation::where('token', $validated['token'])->first();
 
+            // Here we don't check if the invitation is expired, because we want as much as new users as possible.
             if ($invitation && $invitation->status === 'pending') {
                 $invitation->update(['status' => 'accepted']);
                 $invitation->collection->users()->attach($user->id);

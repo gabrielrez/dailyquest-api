@@ -5,6 +5,7 @@ namespace App\Http\Services;
 use App\Exceptions\ConflictException;
 use App\Exceptions\ForbiddenException;
 use App\Exceptions\NotFoundException;
+use App\Http\Enums\InvitationStatusEnum;
 use App\Mail\InvitationMail;
 use App\Mail\UserRemovedMail;
 use App\Models\Collection;
@@ -43,14 +44,19 @@ class CollectionService
      *
      * @param Collection $collection
      * @param string $email
+     * @return \App\Models\Invitation
      */
-    public function inviteUserToCollection(Collection $collection, string $email)
+    public function inviteUserToCollection(Collection $collection, string $email): Invitation
     {
         $user = User::where('email', $email)->first();
 
+        if (Invitation::findPending($collection, $email)) {
+            throw new ConflictException('User already has a pending invitation');
+        }
+
         $token = Str::random(40);
 
-        Invitation::create([
+        $invitation = Invitation::create([
             'collection_id' => $collection->id,
             'email'         => $email,
             'token'         => $token,
@@ -59,7 +65,7 @@ class CollectionService
         if (!$user) {
             Mail::to($email)->send(new InvitationMail($collection, $token, is_new_user: true));
 
-            return 'Invitation sent to new user';
+            return $invitation;
         }
 
         if ($collection->users()->where('user_id', $user->id)->exists()) {
@@ -68,7 +74,7 @@ class CollectionService
 
         Mail::to($email)->send(new InvitationMail($collection, $token, is_new_user: false));
 
-        return 'Invitation sent to existing user';
+        return $invitation;
     }
 
     /**
@@ -76,9 +82,9 @@ class CollectionService
      *
      * @param  Collection  $collection  The collection to remove the user from.
      * @param  string      $email       The email of the user to remove.
-     * @return string
+     * @return void
      */
-    public function removeAndNotifyUser(Collection $collection, string $email)
+    public function removeAndNotifyUser(Collection $collection, string $email): void
     {
         $user_to_remove = User::where('email', $email)->first();
 
@@ -97,7 +103,5 @@ class CollectionService
         $collection->users()->detach($user_to_remove->id);
 
         Mail::to($user_to_remove->email)->send(new UserRemovedMail($collection));
-
-        return 'User removed from collection';
     }
 }

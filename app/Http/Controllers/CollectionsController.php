@@ -80,9 +80,9 @@ class CollectionsController extends Controller
             return $this->failForbidden('You cannot invite yourself to your own collection');
         }
 
-        $response = $this->service->inviteUserToCollection($collection, $validated['user_email']);
+        $invitation = $this->service->inviteUserToCollection($collection, $validated['user_email']);
 
-        return $this->respondCreated($response);
+        return $this->respondCreated($invitation);
     }
 
     public function removeUser(CollectionAddUserRequest $request, Collection $collection)
@@ -93,8 +93,8 @@ class CollectionsController extends Controller
             return $this->failForbidden('Only the owner can remove users from this collection');
         }
 
-        $response = $this->service->removeAndNotifyUser($collection, $validated['user_email']);
+        $this->service->removeAndNotifyUser($collection, $validated['user_email']);
 
-        return $this->respondDeleted($response, 200);
+        return $this->respondDeleted('User removed from collection', 200);
     }
 }
