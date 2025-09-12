@@ -2,11 +2,13 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\GoalAssignUserRequest;
 use App\Http\Requests\GoalCreateRequest;
 use App\Http\Requests\GoalUpdateStatusRequest;
 use App\Http\Services\GoalService;
 use App\Models\Collection;
 use App\Models\Goal;
+use App\Models\User;
 use Illuminate\Http\Request;
 
 class GoalsController extends Controller
@@ -91,6 +93,29 @@ class GoalsController extends Controller
         $status = $request->validated()['status'];
 
         return $this->respond($this->service->updateGoalAndCollectionStatus($goal, $collection, $status));
+    }
+
+    public function assignTo(GoalAssignUserRequest $request, Collection $collection, Goal $goal)
+    {
+        $user_to_assign = $request->validated()['user_username'];
+
+        if (!$collection->belongsToUser($request->user())) {
+            return $this->failForbidden('You are not authorized to access this collection');
+        }
+
+        $user_to_assign = User::where('username', $user_to_assign)->first();
+
+        if (!$collection->belongsToUser($user_to_assign)) {
+            return $this->failForbidden('The user is not a collaborator of this collection');
+        }
+
+        if ($goal->collection_id !== $collection->id) {
+            return $this->failNotFound('Goal not found in this collection');
+        }
+
+        $goal->update(['assigned_to' => $user_to_assign->id]);
+
+        return $this->respondUpdated($goal);
     }
 
     public function destroy(Request $request, Collection $collection, Goal $goal)

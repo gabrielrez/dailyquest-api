@@ -25,6 +25,7 @@ class Goal extends Model
         'description',
         'status',
         'collection_id',
+        'assigned_to',
         'owner_id',
     ];
 

@@ -39,6 +39,9 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::patch('collections/{collection}/goals/{goal}/status', [GoalsController::class, 'updateStatus'])->name('collections.goals.update-status');
     Route::delete('collections/{collection}/goals/{goal}', [GoalsController::class, 'destroy'])->name('collections.goals.destroy');
 
+    // Users inside a goal (sub-resource)
+    Route::patch('collections/{collection}/goals/{goal}/assign', [GoalsController::class, 'assignTo'])->name('collections.goals.assign');
+
     // Users (resource)
     Route::get('users/me', [UsersController::class, 'profile'])->name('users.profile');
 });
