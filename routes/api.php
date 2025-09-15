@@ -15,11 +15,11 @@ Route::get('login', fn() => throw new \App\Exceptions\UnauthorizedException('Una
 
 Route::post('login', [AuthController::class, 'login'])->name('auth.login');
 Route::post('register', [AuthController::class, 'register'])->name('auth.register');
-Route::post('logout', [AuthController::class, 'logout'])->name('auth.logout')->middleware('auth:sanctum');
+Route::post('logout', [AuthController::class, 'logout'])->name('auth.logout')->middleware('auth:api');
 
 Route::post('/collections/invitations/accept', [InvitationController::class, 'accept'])->name('invitations.accept');
 
-Route::middleware('auth:sanctum')->group(function () {
+Route::middleware('auth:api')->group(function () {
     // Collections (resource)
     Route::get('collections', [CollectionsController::class, 'index'])->name('collections.index');
     Route::get('collections/{collection}', [CollectionsController::class, 'show'])->name('collections.show');

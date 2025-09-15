@@ -7,6 +7,7 @@ use App\Http\Requests\UserRegisterRequest;
 use App\Models\Invitation;
 use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 
 class AuthController extends Controller
@@ -32,7 +33,10 @@ class AuthController extends Controller
             }
         }
 
-        $token = $user->createToken('auth_token')->plainTextToken;
+        $token = Auth::attempt([
+            'email'     => $validated['email'],
+            'password'  => $validated['password'],
+        ]);
 
         return $this->respondCreated([
             'user'  => $user,
@@ -42,27 +46,24 @@ class AuthController extends Controller
 
     public function login(UserLoginRequest $request)
     {
-        $request->validated();
+        $credentials = [
+            'email'    => $request->validated()['email'],
+            'password' => $request->validated()['password'],
+        ];
 
-        $user = User::where('email', $request->login)
-            ->orWhere('username', $request->login)
-            ->first();
-
-        if (!$user || !Hash::check($request->password, $user->password)) {
-            return $this->failUnauthorized('Invalid login credentials');
+        if (!$token = Auth::attempt($credentials)) {
+            return $this->failUnauthorized('Invalid credentials');
         }
 
-        $token = $user->createToken('auth_token')->plainTextToken;
-
         return $this->respond([
-            'user'  => $user,
             'token' => $token,
+            'token_type' => 'bearer',
         ]);
     }
 
     public function logout(Request $request)
     {
-        $request->user()->tokens()->delete();
+        Auth::logout();
 
         return $this->respond('Logout successful');
     }
