@@ -140,4 +140,16 @@ trait Respondable
     {
         throw new \App\Exceptions\ConflictException($message);
     }
+
+    /**
+     * Throw a BadRequestException (HTTP 400).
+     *
+     * @param string $message Error message.
+     * @throws \App\Exceptions\BadRequestException
+     * @return never
+     */
+    public function failBadRequest($message = 'Bad Request')
+    {
+        throw new \App\Exceptions\BadRequestException($message);
+    }
 }

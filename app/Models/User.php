@@ -28,6 +28,7 @@ class User extends Authenticatable implements JWTSubject
         'username',
         'email',
         'password',
+        'profile_picture',
     ];
 
     protected $hidden = [
@@ -93,5 +94,15 @@ class User extends Authenticatable implements JWTSubject
     public function goals(): HasMany
     {
         return $this->hasMany(Goal::class, 'owner_id');
+    }
+
+    /**
+     * Profile picture URL.
+     *
+     * @return string|null
+     */
+    public function getProfilePictureUrlAttribute(): ?string
+    {
+        return $this->profile_picture ? asset('storage/' . $this->profile_picture) : null;
     }
 }
