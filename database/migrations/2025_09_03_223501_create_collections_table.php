@@ -22,6 +22,8 @@ return new class extends Migration
             $table->foreignId('owner_id')->constrained('users')->onDelete('cascade');
             $table->date('expired_at')->nullable();
             $table->timestamps();
+
+            $table->unique(['owner_id', 'name']);
         });
     }
 
