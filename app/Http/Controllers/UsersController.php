@@ -10,7 +10,10 @@ class UsersController extends Controller
 {
     public function profile(Request $request)
     {
-        return $this->respond($request->user());
+        $user = $request->user();
+        $user['profile_picture'] = $user->profile_picture_url;
+
+        return $this->respond($user);
     }
 
     public function uploadProfilePicture(ProfilePictureRequest $request)
@@ -28,6 +31,8 @@ class UsersController extends Controller
         $path = $request->file('profile_picture')->store('profile_pictures', 'public');
         $user->update(['profile_picture' => $path]);
 
-        return $this->respondUpdated($user->profile_picture_url);
+        return $this->respondUpdated([
+            'profile_picture' => $user->profile_picture_url
+        ]);
     }
 }

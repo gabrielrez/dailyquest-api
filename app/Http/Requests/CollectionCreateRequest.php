@@ -34,7 +34,7 @@ class CollectionCreateRequest extends FormRequest
                     return $query->where('owner_id', $this->user()->id);
                 }),
             ],
-            'description'      => 'nullable|string|max:45',
+            'description'      => 'nullable|string|max:100',
             'cyclic'           => 'sometimes|boolean',
             'deadline'         => 'sometimes|date|after:today',
             'is_collaborative' => 'sometimes|boolean',
