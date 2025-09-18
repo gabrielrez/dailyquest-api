@@ -22,7 +22,7 @@ class GoalAssignUserRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'user_username' => 'required|string|exists:users,username',
+            'user_username' => 'nullable|string|exists:users,username',
         ];
     }
 }

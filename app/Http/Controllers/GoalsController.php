@@ -97,11 +97,18 @@ class GoalsController extends Controller
 
     public function assignTo(GoalAssignUserRequest $request, Collection $collection, Goal $goal)
     {
-        $user_to_assign = $request->validated()['user_username'];
+        $user_username = $request->validated()['user_username'] ?? null;
 
         if (!$collection->belongsToUser($request->user())) {
             return $this->failForbidden('You are not authorized to access this collection');
         }
+
+        if (empty($user_username)) {
+            $goal->update(['assigned_to' => null]);
+            return $this->respondUpdated($goal);
+        }
+
+        $user_to_assign = $request->validated()['user_username'];
 
         $user_to_assign = User::where('username', $user_to_assign)->first();
 
