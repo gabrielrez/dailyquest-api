@@ -139,6 +139,11 @@ class GoalsController extends Controller
 
         $goal->delete();
 
+        if ($collection->goals()->count() === 0) {
+            $collection->status = 'in_progress';
+            $collection->save();
+        }
+
         return $this->respondDeleted();
     }
 }
