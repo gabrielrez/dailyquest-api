@@ -50,7 +50,13 @@ class CollectionService
     {
         $user = User::where('email', $email)->first();
 
-        if (Invitation::findPending($collection, $email)) {
+        if ($user && $collection->users()->where('user_id', $user->id)->exists()) {
+            throw new ConflictException('User already in collection');
+        }
+
+        $pending_invitation = Invitation::findPending($collection, $email);
+
+        if ($pending_invitation && $pending_invitation->isExpired()) {
             throw new ConflictException('User already has a pending invitation');
         }
 
@@ -66,10 +72,6 @@ class CollectionService
             Mail::to($email)->send(new InvitationMail($collection, $token, is_new_user: true));
 
             return $invitation;
-        }
-
-        if ($collection->users()->where('user_id', $user->id)->exists()) {
-            throw new ConflictException('User already in collection');
         }
 
         Mail::to($email)->send(new InvitationMail($collection, $token, is_new_user: false));

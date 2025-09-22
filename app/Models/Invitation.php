@@ -43,16 +43,16 @@ class Invitation extends Model
 
     /**
      * Find a pending invitation for the given email and collection.
+     * 
+     * @param  Collection  $collection  The collection the invitation belongs to.
+     * @param  string      $email       The email of the user to invite.
+     * @return self|null
      */
     public static function findPending(Collection $collection, string $email): ?self
     {
         return static::where('collection_id', $collection->id)
             ->where('email', $email)
             ->where('status', InvitationStatusEnum::PENDING)
-            ->where(function ($query) {
-                $query->whereNull('expires_at')
-                    ->orWhere('expires_at', '>', now());
-            })
             ->first();
     }
 }
