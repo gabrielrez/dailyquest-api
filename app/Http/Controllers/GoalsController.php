@@ -92,7 +92,9 @@ class GoalsController extends Controller
 
         $status = $request->validated()['status'];
 
-        return $this->respond($this->service->updateGoalAndCollectionStatus($goal, $collection, $status));
+        return $this->respond(
+            $this->service->updateGoalAndCollectionStatus($goal, $collection, $status)
+        );
     }
 
     public function assignTo(GoalAssignUserRequest $request, Collection $collection, Goal $goal)
@@ -108,31 +110,13 @@ class GoalsController extends Controller
             return $this->respondUpdated($goal);
         }
 
-        $user_to_assign = $request->validated()['user_username'];
-
-        $user_to_assign = User::where('username', $user_to_assign)->first();
-
-        if (!$collection->belongsToUser($user_to_assign)) {
-            return $this->failForbidden('The user is not a collaborator of this collection');
-        }
-
-        if ($goal->collection_id !== $collection->id) {
-            return $this->failNotFound('Goal not found in this collection');
-        }
-
-        $goal->update(['assigned_to' => $user_to_assign->id]);
-
-        return $this->respondUpdated($goal);
+        return $this->respondUpdated(
+            $this->service->assignTo($user_username, $goal, $collection)
+        );
     }
 
-    public function destroy(Request $request, Collection $collection, Goal $goal)
+    public function destroy(Collection $collection, Goal $goal)
     {
-        $user = $request->user();
-
-        if (!$collection->belongsToUser($user, owner_only: true)) {
-            return $this->failForbidden('Only the owner of the collection can delete goals');
-        }
-
         if ($goal->collection_id !== $collection->id) {
             return $this->failNotFound('Goal not found in this collection');
         }

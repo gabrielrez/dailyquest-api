@@ -61,4 +61,21 @@ class GoalService
             ];
         });
     }
+
+    public function assignTo(string $username, Goal $goal, Collection $collection): Goal
+    {
+        $user_to_assign = User::where('username', $username)->first();
+
+        if (!$collection->belongsToUser($user_to_assign)) {
+            throw new ForbiddenException('The user is not a collaborator of this collection');
+        }
+
+        if ($goal->collection_id !== $collection->id) {
+            throw new NotFoundException('Goal not found in this collection');
+        }
+
+        $goal->update(['assigned_to' => $user_to_assign->id]);
+
+        return $goal;
+    }
 }

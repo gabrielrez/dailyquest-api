@@ -147,9 +147,7 @@ class CollectionService
      */
     public function removeAndNotifyUser(Collection $collection, string $email): void
     {
-        $user_to_remove = User::where('email', $email)->first();
-
-        if (!$user_to_remove) {
+        if (!$user_to_remove = User::where('email', $email)->first()) {
             throw new NotFoundException('User not found');
         }
 
