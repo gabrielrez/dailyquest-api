@@ -135,6 +135,7 @@ class CollectionService
             'collection_id' => $collection->id,
             'email'         => $email,
             'token'         => $token,
+            'expires_at'    => now()->addDays(3),
         ]);
     }
 
