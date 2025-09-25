@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\ProfilePictureRequest;
+use App\Http\Requests\UserUpdateRequest;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 
@@ -14,6 +15,19 @@ class UsersController extends Controller
         $user['profile_picture'] = $user->profile_picture_url;
 
         return $this->respond($user);
+    }
+
+    public function updateProfile(UserUpdateRequest $request)
+    {
+        $request->validated();
+        $user = $request->user();
+
+        $user->update($request->only([
+            'full_name',
+            'username'
+        ]));
+
+        return $this->respondUpdated($user);
     }
 
     public function uploadProfilePicture(ProfilePictureRequest $request)

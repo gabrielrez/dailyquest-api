@@ -45,4 +45,5 @@ Route::middleware('auth:api')->group(function () {
     // Users (resource)
     Route::get('users/me', [UsersController::class, 'profile'])->name('users.profile');
     Route::post('users/profile-picture', [UsersController::class, 'uploadProfilePicture'])->name('users.profile-picture');
+    Route::patch('users', [UsersController::class, 'updateProfile'])->name('users.update');
 });
