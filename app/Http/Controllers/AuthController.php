@@ -4,7 +4,10 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\UserLoginRequest;
 use App\Http\Requests\UserRegisterRequest;
+use App\Http\Services\LogService;
+use App\LogActionEnum;
 use App\Models\Invitation;
+use App\Models\Log;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -37,6 +40,8 @@ class AuthController extends Controller
             'email'     => $validated['email'],
             'password'  => $validated['password'],
         ]);
+
+        LogService::log(LogActionEnum::USER_REGISTERED, $user);
 
         return $this->respondCreated([
             'user'  => $user,
