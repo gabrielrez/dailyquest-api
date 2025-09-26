@@ -17,6 +17,20 @@ class UserSeeder extends Seeder
             'password'  => Hash::make('password'),
         ]);
 
-        User::factory(4)->create();
+        User::factory()->create([
+            'full_name' => 'Maria Iara',
+            'username'  => 'chaminha',
+            'email'     => 'chaminha@gmail.com',
+            'password'  => Hash::make('password'),
+        ]);
+
+        User::factory()->create([
+            'full_name' => 'Davi Rezende',
+            'username'  => 'daviuou',
+            'email'     => 'daviuou@gmail.com',
+            'password'  => Hash::make('password'),
+        ]);
+
+        User::factory(2)->create();
     }
 }
