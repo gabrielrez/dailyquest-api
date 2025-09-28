@@ -16,6 +16,7 @@ return new class extends Migration
             $table->string('name')->max(45);
             $table->text('description')->nullable()->max(255);
             $table->string('status')->default('to_do');
+            $table->unsignedInteger('order')->default(0);
             $table->foreignId('assigned_to')->nullable()->constrained('users')->onDelete('set null');
             $table->foreignId('collection_id')->constrained('collections')->onDelete('cascade');
             $table->foreignId('owner_id')->constrained('users')->onDelete('cascade');

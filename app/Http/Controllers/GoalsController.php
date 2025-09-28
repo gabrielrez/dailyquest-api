@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\GoalAssignUserRequest;
 use App\Http\Requests\GoalCreateRequest;
+use App\Http\Requests\GoalReorderRequest;
 use App\Http\Requests\GoalUpdateStatusRequest;
 use App\Http\Services\GoalService;
 use App\Models\Collection;
@@ -52,13 +53,9 @@ class GoalsController extends Controller
             return $this->failForbidden('You are not authorized to access this collection');
         }
 
-        $goal = Goal::create([
-            ...$request->validated(),
-            'collection_id' => $collection->id,
-            'owner_id' => $user->id,
-        ]);
-
-        return $this->respondCreated($goal);
+        return $this->respondCreated(
+            $this->service->create($request->validated(), $collection, $user)
+        );
     }
 
     public function update(GoalCreateRequest $request, Collection $collection, Goal $goal)
@@ -97,6 +94,17 @@ class GoalsController extends Controller
         );
     }
 
+    public function reorder(GoalReorderRequest $request, Collection $collection)
+    {
+        $request->validated();
+
+        $this->service->reorder($request->goals_data, $collection);
+
+        return $this->respondUpdated([
+            'message' => 'Goals reordered'
+        ]);
+    }
+
     public function assignTo(GoalAssignUserRequest $request, Collection $collection, Goal $goal)
     {
         $user_username = $request->validated()['user_username'] ?? null;
@@ -122,6 +130,8 @@ class GoalsController extends Controller
         }
 
         $goal->delete();
+
+        // Normalize the order of the goals
 
         if ($collection->goals()->count() === 0) {
             $collection->status = 'in_progress';

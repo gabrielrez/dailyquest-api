@@ -27,6 +27,7 @@ class Goal extends Model
         'collection_id',
         'assigned_to',
         'owner_id',
+        'order',
     ];
 
     protected $hidden = [

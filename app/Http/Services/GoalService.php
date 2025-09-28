@@ -78,4 +78,27 @@ class GoalService
 
         return $goal;
     }
+
+    public function create(array $data, Collection $collection, User $user): Goal
+    {
+        $max_order = Goal::where('collection_id', $collection->id)->max('order') ?? 0;
+
+        return Goal::create([
+            ...$data,
+            'collection_id' => $collection->id,
+            'owner_id' => $user->id,
+            'order' => $max_order + 1,
+        ]);
+    }
+
+    public function reorder(array $goals_data, Collection $collection): void
+    {
+        DB::transaction(function () use ($goals_data, $collection) {
+            foreach ($goals_data as $index => $goal_data) {
+                Goal::where('id', $goal_data['id'])
+                    ->where('collection_id', $collection->id)
+                    ->update(['order' => $index + 1]);
+            }
+        });
+    }
 }

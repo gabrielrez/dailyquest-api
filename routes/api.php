@@ -37,6 +37,7 @@ Route::middleware('auth:api')->group(function () {
     Route::post('collections/{collection}/goals', [GoalsController::class, 'store'])->name('collections.goals.store');
     Route::put('collections/{collection}/goals/{goal}', [GoalsController::class, 'update'])->name('collections.goals.update');
     Route::patch('collections/{collection}/goals/{goal}/status', [GoalsController::class, 'updateStatus'])->name('collections.goals.update-status');
+    Route::patch('collections/{collection}/goals/reorder', [GoalsController::class, 'reorder'])->name('collections.goals.reorder');
     Route::delete('collections/{collection}/goals/{goal}', [GoalsController::class, 'destroy'])->name('collections.goals.destroy');
 
     // Users inside a goal (sub-resource)
