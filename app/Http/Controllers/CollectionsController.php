@@ -30,7 +30,11 @@ class CollectionsController extends Controller
             return $this->failForbidden('You are not authorized to access this collection');
         }
 
-        $collection->load(['owner', 'users', 'goals']);
+        $collection->load([
+            'owner',
+            'users',
+            'goals' => fn($query) => $query->orderBy('order')
+        ]);
 
         return $this->respond($collection);
     }

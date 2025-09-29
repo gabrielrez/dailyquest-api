@@ -27,7 +27,13 @@ class GoalsController extends Controller
             return $this->failForbidden('You are not authorized to access this collection');
         }
 
-        return $this->respond($collection->goals()->with('owner')->get());
+        $goals = $collection
+            ->goals()
+            ->with('owner')
+            ->orderBy('order')
+            ->get();
+
+        return $this->respond($goals);
     }
 
     public function show(Request $request, Collection $collection, Goal $goal)
