@@ -28,9 +28,11 @@ class InvitationMail extends Mailable
 
     public function content(): Content
     {
+        $frontend_url = rtrim(env('FRONTEND_URL'), '/');
+
         $url = $this->is_new_user
-            ? "/register?token={$this->token}"
-            : "/accept?token={$this->token}&collection=" . urlencode($this->collection->name) . "&user=" . urlencode($this->collection->owner->username);
+            ?  $frontend_url . "/register?token={$this->token}&collection=" . urlencode($this->collection->name)
+            : $frontend_url . "/accept?token={$this->token}&collection=" . urlencode($this->collection->name) . "&user=" . urlencode($this->collection->owner->username);
 
         return new Content(
             view: 'emails.invitation',
