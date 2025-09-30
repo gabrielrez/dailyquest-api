@@ -7,12 +7,12 @@
 </head>
 
 <body>
-    <h2>Você foi convidado para a coleção: {{ $collection->name }}</h2>
+    <h2>🎉 You have been invited to the collection: {{ $collection->name }}</h2>
     <p>
         @if($is_new_user)
-        Você ainda não possui conta. Clique no link abaixo para se registrar e já entrar na coleção:
+        You don't have an account yet. Click the link below to register and join the collection:
         @else
-        Clique no link abaixo para aceitar o convite e entrar na coleção:
+        Click the link below to accept the invitation and join the collection:
         @endif
     </p>
     <p>
