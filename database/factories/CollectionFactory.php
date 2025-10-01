@@ -14,8 +14,8 @@ class CollectionFactory extends Factory
     public function definition(): array
     {
         return [
-            'name'             => $this->faker->words(2, true),
-            'description'      => $this->faker->sentence(5),
+            'name'             => fake()->name(),
+            'description'      => fake()->sentence(5),
             'cyclic'           => false,
             'deadline'         => null,
             'is_collaborative' => true,
