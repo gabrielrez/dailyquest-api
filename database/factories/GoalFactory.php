@@ -15,9 +15,9 @@ class GoalFactory extends Factory
     public function definition(): array
     {
         return [
-            'name'         => $this->faker->words(3, true),
-            'description'  => $this->faker->sentence(10),
-            'status'       => $this->faker->randomElement(GoalStatusEnum::notCompleted())->value,
+            'name'         => fake()->name(),
+            'description'  => fake()->sentence(10),
+            'status'       => collect(GoalStatusEnum::notCompleted())->random()->value,
             'collection_id' => Collection::factory(),
             'owner_id'     => User::factory(),
         ];

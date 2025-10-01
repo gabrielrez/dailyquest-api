@@ -10,12 +10,12 @@ use Illuminate\Support\Facades\Hash;
  */
 class UserFactory extends Factory
 {
-   public function definition(): array
+    public function definition(): array
     {
         return [
-            'full_name' => $this->faker->name(),
-            'username'  => $this->faker->unique()->userName(),
-            'email'     => $this->faker->unique()->safeEmail(),
+            'full_name' => fake()->name(),
+            'username'  => fake()->userName(),
+            'email'     => fake()->unique()->safeEmail(),
             'password'  => Hash::make('password'),
         ];
     }
