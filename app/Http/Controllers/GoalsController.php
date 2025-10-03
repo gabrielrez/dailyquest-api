@@ -21,6 +21,23 @@ class GoalsController extends Controller
         $this->service = new GoalService();
     }
 
+    public function list(Request $request)
+    {
+        $user = $request->user();
+
+        if (!$collection_id = $request->collection_id) {
+            return $this->failBadRequest('Collection ID is required');
+        }
+
+        $collection = Collection::where('id', $collection_id)->firstOrFail();
+
+        if (!$collection->belongsToUser($user)) {
+            return $this->failForbidden('You are not authorized to access this collection');
+        }
+
+        return $this->respond($collection->goals);
+    }
+
     public function index(Request $request, Collection $collection)
     {
         if (!$collection->belongsToUser($request->user())) {
