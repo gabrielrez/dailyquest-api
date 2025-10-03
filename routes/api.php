@@ -11,6 +11,8 @@ Route::get('/', fn() => response()->json([
     'message' => 'Hello World, DailyQuest API!'
 ]));
 
+Route::get('ping', fn () => 'pong');
+
 Route::get('login', fn() => throw new \App\Exceptions\UnauthorizedException('Unauthenticated'))->name('login');
 
 Route::post('login', [AuthController::class, 'login'])->name('auth.login');
@@ -32,6 +34,7 @@ Route::middleware('auth:api')->group(function () {
     Route::delete('/collections/{collection}/users', [CollectionsController::class, 'removeUser'])->name('collections.users.destroy');
 
     // Goals inside a collection (sub-resource)
+    Route::get('goals', [GoalsController::class, 'list'])->name('collections.goals.list');
     Route::get('collections/{collection}/goals', [GoalsController::class, 'index'])->name('collections.goals.index');
     Route::get('collections/{collection}/goals/{goal}', [GoalsController::class, 'show'])->name('collections.goals.show');
     Route::post('collections/{collection}/goals', [GoalsController::class, 'store'])->name('collections.goals.store');
