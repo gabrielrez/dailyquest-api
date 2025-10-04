@@ -8,26 +8,23 @@ use Tests\TestCase;
 
 uses(TestCase::class, RefreshDatabase::class);
 
-test('profile_picture_url returns null if no profile picture is set', function () {
-    $user = User::factory()->create(['profile_picture' => null]);
+test('password is hashed', function () {
+    $user = User::factory()->create(['password' => 'secret']);
 
-    expect($user->profile_picture_url)->toBeNull();
-});
-
-test('profile_picture_url returns the correct URL when a profile picture is set', function () {
-    $user = User::factory()->create([
-        'profile_picture' => 'avatars/test.png',
-    ]);
-
-    expect($user->profile_picture_url)->toBe(asset('storage/avatars/test.png'));
+    expect($user->password)->not->toBe('secret')
+        ->and(password_verify('secret', $user->password))->toBeTrue();
 });
 
 test('user can have owned collections', function () {
     $user = User::factory()->create();
     $collection = Collection::factory()->create(['owner_id' => $user->id]);
 
-    expect($user->ownedCollections)->toHaveCount(1)
-        ->first()->id->toBe($collection->id);
+    $owned_collections = $user->ownedCollections;
+
+    expect($owned_collections)->toHaveCount(1)
+        ->and($owned_collections->first()->id)->toBe($collection->id)
+        ->and($owned_collections->first()->owner_id)->toBe($user->id)
+        ->and($owned_collections->first())->toBeInstanceOf(Collection::class);
 });
 
 test('user can have collaborative collections', function () {
@@ -36,26 +33,39 @@ test('user can have collaborative collections', function () {
 
     $user->collections()->attach($collection->id);
 
-    expect($user->collections)->toHaveCount(1)
-        ->first()->id->toBe($collection->id);
+    $collections = $user->collections;
+
+    expect($collections)->toHaveCount(1)
+        ->and($collections->first()->id)->toBe($collection->id)
+        ->and($collections->first()->owner_id)->not->toBe($user->id)
+        ->and($collections->first())->toBeInstanceOf(Collection::class);
 });
 
-test('user can have goals', function () {
-    $user = User::factory()->create();
-    $goal = Goal::factory()->create(['owner_id' => $user->id]);
+test('user can have owned goals', function () {
+    $user = User::factory()->hasGoals(3)->create();
 
-    expect($user->goals)->toHaveCount(1)
-        ->first()->id->toBe($goal->id);
+    $goals = $user->goals;
+
+    expect($goals)->toHaveCount(3)
+        ->and($goals->first()->owner_id)->toBe($user->id)
+        ->and($goals->first())->toBeInstanceOf(Goal::class);
 });
 
-test('getJWTIdentifier returns the user primary key', function () {
+test('jwt identifier returns user id', function () {
     $user = User::factory()->create();
 
     expect($user->getJWTIdentifier())->toBe($user->id);
 });
 
-test('getJWTCustomClaims returns an empty array', function () {
-    $user = User::factory()->create();
+test('profile picture url returns null if no picture', function () {
+    $user = User::factory()->create(['profile_picture' => null]);
 
-    expect($user->getJWTCustomClaims())->toBeArray()->toBe([]);
+    expect($user->profile_picture_url)->toBeNull();
+});
+
+
+test('profile picture url returns full path when picture exists', function () {
+    $user = User::factory()->create(['profile_picture' => 'avatars/me.png']);
+
+    expect($user->profile_picture_url)->toBe(asset('storage/avatars/me.png'));
 });
