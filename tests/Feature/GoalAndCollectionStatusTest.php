@@ -15,7 +15,7 @@ beforeEach(function () {
 });
 
 describe('updateGoalAndCollectionStatus', function () {
-    test('marks collection as completed when all goals are done', function () {
+    it('marks collection as completed when all goals are done', function () {
         $collection = Collection::factory()->create(['status' => CollectionStatusEnum::IN_PROGRESS]);
         $goal1 = Goal::factory()->for($collection)->create(['status' => GoalStatusEnum::TODO->value]);
         Goal::factory()->for($collection)->create(['status' => GoalStatusEnum::DONE->value]);
@@ -27,7 +27,7 @@ describe('updateGoalAndCollectionStatus', function () {
         expect($result['collection']->status)->toBe(CollectionStatusEnum::COMPLETED->value);
     });
 
-    test('sets collection back to in progress when a goal status changes from done to doing', function () {
+    it('sets collection back to in progress when a goal status changes from done to doing', function () {
         $collection = Collection::factory()->create(['status' => CollectionStatusEnum::COMPLETED]);
         $goal1 = Goal::factory()->for($collection)->create(['status' => GoalStatusEnum::DONE->value]);
         Goal::factory()->for($collection)->create(['status' => GoalStatusEnum::DONE->value]);
@@ -38,7 +38,7 @@ describe('updateGoalAndCollectionStatus', function () {
         expect($result['collection']->status)->toBe(CollectionStatusEnum::IN_PROGRESS->value);
     });
 
-    test('keeps collection in progress when not all goals are completed', function () {
+    it('keeps collection in progress when not all goals are completed', function () {
         $collection = Collection::factory()->create(['status' => CollectionStatusEnum::IN_PROGRESS]);
         $goal1 = Goal::factory()->for($collection)->create(['status' => GoalStatusEnum::TODO->value]);
         Goal::factory()->for($collection)->create(['status' => GoalStatusEnum::TODO->value]);
