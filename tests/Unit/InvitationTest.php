@@ -9,61 +9,67 @@ use Tests\TestCase;
 
 uses(TestCase::class, RefreshDatabase::class);
 
-test('invitation belongs to a collection', function () {
-    $collection = Collection::factory()->create();
-    $invitation = Invitation::factory()->for($collection)->create();
+describe('Relationships', function () {
+    it('belongs to a collection', function () {
+        $collection = Collection::factory()->create();
+        $invitation = Invitation::factory()->for($collection)->create();
 
-    expect($invitation->collection)->toBeInstanceOf(Collection::class)
-        ->id->toBe($collection->id);
+        expect($invitation->collection)->toBeInstanceOf(Collection::class)
+            ->id->toBe($collection->id);
+    });
 });
 
-test('isExpired returns true when expires_at is in the past', function () {
-    $invitation = Invitation::factory()->create([
-        'expires_at' => Carbon::now()->subDay(),
-    ]);
+describe('isExpired', function () {
+    it('returns true when expires_at is in the past', function () {
+        $invitation = Invitation::factory()->create([
+            'expires_at' => Carbon::now()->subDay(),
+        ]);
 
-    expect($invitation->isExpired())->toBeTrue();
+        expect($invitation->isExpired())->toBeTrue();
+    });
+
+    it('returns false when expires_at is in the future', function () {
+        $invitation = Invitation::factory()->create([
+            'expires_at' => Carbon::now()->addDay(),
+        ]);
+
+        expect($invitation->isExpired())->toBeFalse();
+    });
 });
 
-test('isExpired returns false when expires_at is in the future', function () {
-    $invitation = Invitation::factory()->create([
-        'expires_at' => Carbon::now()->addDay(),
-    ]);
+describe('findPending', function () {
+    it('returns invitation if pending exists', function () {
+        $collection = Collection::factory()->create();
+        $invitation = Invitation::factory()->create([
+            'collection_id' => $collection->id,
+            'email' => 'test@example.com',
+            'status' => InvitationStatusEnum::PENDING,
+        ]);
 
-    expect($invitation->isExpired())->toBeFalse();
-});
+        $found = Invitation::findPending($collection, 'test@example.com');
 
-test('findPending returns invitation if pending exists', function () {
-    $collection = Collection::factory()->create();
-    $invitation = Invitation::factory()->create([
-        'collection_id' => $collection->id,
-        'email' => 'test@example.com',
-        'status' => InvitationStatusEnum::PENDING,
-    ]);
+        expect($found)->not->toBeNull()
+            ->id->toBe($invitation->id);
+    });
 
-    $found = Invitation::findPending($collection, 'test@example.com');
+    it('returns null if no pending invitation exists', function () {
+        $collection = Collection::factory()->create();
 
-    expect($found)->not->toBeNull()
-        ->id->toBe($invitation->id);
-});
+        $found = Invitation::findPending($collection, 'notfound@example.com');
 
-test('findPending returns null if no pending invitation exists', function () {
-    $collection = Collection::factory()->create();
+        expect($found)->toBeNull();
+    });
 
-    $found = Invitation::findPending($collection, 'notfound@example.com');
+    it('does not return if invitation is not pending', function () {
+        $collection = Collection::factory()->create();
+        Invitation::factory()->create([
+            'collection_id' => $collection->id,
+            'email' => 'test@example.com',
+            'status' => InvitationStatusEnum::ACCEPTED,
+        ]);
 
-    expect($found)->toBeNull();
-});
+        $found = Invitation::findPending($collection, 'test@example.com');
 
-test('findPending does not return if invitation is not pending', function () {
-    $collection = Collection::factory()->create();
-    Invitation::factory()->create([
-        'collection_id' => $collection->id,
-        'email' => 'test@example.com',
-        'status' => InvitationStatusEnum::ACCEPTED,
-    ]);
-
-    $found = Invitation::findPending($collection, 'test@example.com');
-
-    expect($found)->toBeNull();
+        expect($found)->toBeNull();
+    });
 });
