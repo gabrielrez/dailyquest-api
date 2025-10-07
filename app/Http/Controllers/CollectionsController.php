@@ -24,11 +24,9 @@ class CollectionsController extends Controller
         return $this->respond($collections);
     }
 
-    public function show(Request $request, Collection $collection)
+    public function show(Collection $collection)
     {
-        if (!$collection->belongsToUser($request->user())) {
-            return $this->failForbidden('You are not authorized to access this collection');
-        }
+        $this->authorize('collaboratorAccess', $collection);
 
         $collection->load([
             'owner',
@@ -51,20 +49,16 @@ class CollectionsController extends Controller
 
     public function update(CollectionCreateRequest $request, Collection $collection)
     {
-        if (!$collection->belongsToUser($request->user(), owner_only: true)) {
-            return $this->failForbidden('Only the owner can update this collection');
-        }
+        $this->authorize('ownerAccess', $collection);
 
         $collection->update($request->validated());
 
         return $this->respondUpdated($collection);
     }
 
-    public function destroy(Request $request, Collection $collection)
+    public function destroy(Collection $collection)
     {
-        if (!$collection->belongsToUser($request->user(), owner_only: true)) {
-            return $this->failForbidden('Only the owner can delete this collection');
-        }
+        $this->authorize('ownerAccess', $collection);
 
         $collection->delete();
 
@@ -73,12 +67,10 @@ class CollectionsController extends Controller
 
     public function inviteUser(CollectionAddUserRequest $request, Collection $collection)
     {
+        $this->authorize('ownerAccess', $collection);
+
         $validated = $request->validated();
         $user = $request->user();
-
-        if (!$collection->belongsToUser($user, owner_only: true)) {
-            return $this->failForbidden('Only the owner can add users to this collection');
-        }
 
         if ($user->email === $validated['user_email']) {
             return $this->failForbidden('You cannot invite yourself to your own collection');
@@ -91,11 +83,9 @@ class CollectionsController extends Controller
 
     public function removeUser(CollectionAddUserRequest $request, Collection $collection)
     {
-        $validated = $request->validated();
+        $this->authorize('ownerAccess', $collection);
 
-        if (!$collection->belongsToUser($request->user(), owner_only: true)) {
-            return $this->failForbidden('Only the owner can remove users from this collection');
-        }
+        $validated = $request->validated();
 
         $this->service->removeAndNotifyUser($collection, $validated['user_email']);
 

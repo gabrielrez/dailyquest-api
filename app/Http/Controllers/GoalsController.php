@@ -9,7 +9,6 @@ use App\Http\Requests\GoalUpdateStatusRequest;
 use App\Http\Services\GoalService;
 use App\Models\Collection;
 use App\Models\Goal;
-use App\Models\User;
 use Illuminate\Http\Request;
 
 class GoalsController extends Controller
@@ -23,26 +22,20 @@ class GoalsController extends Controller
 
     public function list(Request $request)
     {
-        $user = $request->user();
-
         if (!$collection_id = $request->collection_id) {
             return $this->failBadRequest('Collection ID is required');
         }
 
         $collection = Collection::where('id', $collection_id)->firstOrFail();
 
-        if (!$collection->belongsToUser($user)) {
-            return $this->failForbidden('You are not authorized to access this collection');
-        }
+        $this->authorize('collaboratorAccess', $collection);
 
         return $this->respond($collection->goals);
     }
 
-    public function index(Request $request, Collection $collection)
+    public function index(Collection $collection)
     {
-        if (!$collection->belongsToUser($request->user())) {
-            return $this->failForbidden('You are not authorized to access this collection');
-        }
+        $this->authorize('collaboratorAccess', $collection);
 
         $goals = $collection
             ->goals()
@@ -53,13 +46,9 @@ class GoalsController extends Controller
         return $this->respond($goals);
     }
 
-    public function show(Request $request, Collection $collection, Goal $goal)
+    public function show(Collection $collection, Goal $goal)
     {
-        $user = $request->user();
-
-        if (!$collection->belongsToUser($user)) {
-            return $this->failForbidden('You are not authorized to access this collection');
-        }
+        $this->authorize('collaboratorAccess', $collection);
 
         if ($goal->collection_id !== $collection->id) {
             return $this->failNotFound('Goal not found in this collection');
@@ -70,11 +59,9 @@ class GoalsController extends Controller
 
     public function store(GoalCreateRequest $request, Collection $collection)
     {
+        $this->authorize('collaboratorAccess', $collection);
+        
         $user = $request->user();
-
-        if (!$collection->belongsToUser($user)) {
-            return $this->failForbidden('You are not authorized to access this collection');
-        }
 
         return $this->respondCreated(
             $this->service->create($request->validated(), $collection, $user)
@@ -83,11 +70,7 @@ class GoalsController extends Controller
 
     public function update(GoalCreateRequest $request, Collection $collection, Goal $goal)
     {
-        $user = $request->user();
-
-        if (!$collection->belongsToUser($user, owner_only: true)) {
-            return $this->failForbidden('Only the owner of the collection can update goals');
-        }
+        $this->authorize('collaboratorAccess', $collection);
 
         if ($goal->collection_id !== $collection->id) {
             return $this->failNotFound('Goal not found in this collection');
@@ -100,11 +83,7 @@ class GoalsController extends Controller
 
     public function updateStatus(GoalUpdateStatusRequest $request, Collection $collection, Goal $goal)
     {
-        $user = $request->user();
-
-        if (!$collection->belongsToUser($user)) {
-            return $this->failForbidden('You are not authorized to access this collection');
-        }
+        $this->authorize('collaboratorAccess', $collection);
 
         if ($goal->collection_id !== $collection->id) {
             return $this->failNotFound('Goal not found in this collection');
@@ -119,6 +98,8 @@ class GoalsController extends Controller
 
     public function reorder(GoalReorderRequest $request, Collection $collection)
     {
+        $this->authorize('collaboratorAccess', $collection);
+
         $request->validated();
 
         $this->service->reorder($request->goals_data, $collection);
@@ -130,11 +111,9 @@ class GoalsController extends Controller
 
     public function assignTo(GoalAssignUserRequest $request, Collection $collection, Goal $goal)
     {
-        $user_username = $request->validated()['user_username'] ?? null;
+        $this->authorize('collaboratorAccess', $collection);
 
-        if (!$collection->belongsToUser($request->user())) {
-            return $this->failForbidden('You are not authorized to access this collection');
-        }
+        $user_username = $request->validated()['user_username'] ?? null;
 
         if (empty($user_username)) {
             $goal->update(['assigned_to' => null]);
@@ -148,6 +127,8 @@ class GoalsController extends Controller
 
     public function destroy(Collection $collection, Goal $goal)
     {
+        $this->authorize('collaboratorAccess', $collection);
+
         if ($goal->collection_id !== $collection->id) {
             return $this->failNotFound('Goal not found in this collection');
         }
