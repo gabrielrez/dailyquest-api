@@ -19,6 +19,7 @@ return new class extends Migration
             $table->date('deadline')->nullable();
             $table->boolean('is_collaborative')->default(false);
             $table->string('status')->default('in_progress');
+            $table->dateTime('completed_at')->nullable();
             $table->foreignId('owner_id')->constrained('users')->onDelete('cascade');
             $table->date('expired_at')->nullable();
             $table->timestamps();

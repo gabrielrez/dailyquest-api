@@ -6,9 +6,11 @@ use App\Exceptions\ConflictException;
 use App\Exceptions\ForbiddenException;
 use App\Exceptions\NotFoundException;
 use App\Http\Enums\CollectionStatusEnum;
+use App\Http\Enums\GoalStatusEnum;
 use App\Models\Collection;
 use App\Models\Goal;
 use App\Models\User;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -43,16 +45,28 @@ class GoalService
     public function updateGoalAndCollectionStatus(Goal $goal, Collection $collection, string $status)
     {
         return DB::transaction(function () use ($goal, $collection, $status) {
+            $goal->update(['done_at' => null]);
+
             $goal->update([
                 'status' => $status,
             ]);
+
+            if ($status === GoalStatusEnum::DONE->value) {
+                $goal->update(['done_at' => Carbon::now()]);
+            }
 
             $collection_status = $collection->isCompleted()
                 ? CollectionStatusEnum::COMPLETED
                 : CollectionStatusEnum::IN_PROGRESS;
 
+            $collection->update(['completed_at' => null]);
+
             if ($collection->status !== $collection_status) {
                 $collection->update(['status' => $collection_status]);
+            }
+
+            if ($collection->isCompleted()) {
+                $collection->update(['completed_at' => Carbon::now()]);
             }
 
             return [

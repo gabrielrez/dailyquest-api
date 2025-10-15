@@ -24,10 +24,15 @@ class Goal extends Model
         'name',
         'description',
         'status',
+        'done_at',
         'collection_id',
         'assigned_to',
         'owner_id',
         'order',
+    ];
+
+    protected $casts = [
+        'done_at' => 'datetime',
     ];
 
     protected $hidden = [

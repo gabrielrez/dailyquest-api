@@ -33,7 +33,12 @@ class Collection extends Model
         'deadline',
         'is_collaborative',
         'status',
+        'completed_at',
         'owner_id',
+    ];
+
+    protected $casts = [
+        'completed_at' => 'datetime',
     ];
 
     protected $hidden = [

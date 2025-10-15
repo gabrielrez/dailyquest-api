@@ -4,6 +4,7 @@ use App\Http\Controllers\AuthController;
 use App\Http\Controllers\CollectionsController;
 use App\Http\Controllers\GoalsController;
 use App\Http\Controllers\InvitationController;
+use App\Http\Controllers\ReportController;
 use App\Http\Controllers\UsersController;
 use Illuminate\Support\Facades\Route;
 
@@ -11,7 +12,7 @@ Route::get('/', fn() => response()->json([
     'message' => 'Hello World, DailyQuest API!'
 ]));
 
-Route::get('ping', fn () => 'pong');
+Route::get('ping', fn() => 'pong');
 
 Route::get('login', fn() => throw new \App\Exceptions\UnauthorizedException('Unauthenticated'))->name('login');
 
@@ -50,4 +51,7 @@ Route::middleware('auth:api')->group(function () {
     Route::get('users/me', [UsersController::class, 'profile'])->name('users.profile');
     Route::post('users/profile-picture', [UsersController::class, 'uploadProfilePicture'])->name('users.profile-picture');
     Route::patch('users', [UsersController::class, 'updateProfile'])->name('users.update');
+
+    // Report
+    Route::post('/report', [ReportController::class, 'index'])->name('report.generate');
 });
