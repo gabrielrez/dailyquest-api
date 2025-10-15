@@ -5,11 +5,13 @@ namespace App\Http\Services;
 use App\Http\Interfaces\ReportInterface;
 use App\Http\Services\Reports\DayReport;
 use App\Http\Services\Reports\MonthReport;
+use App\Http\Services\Reports\OverallReport;
 use InvalidArgumentException;
 
 class ReportService
 {
     protected array $types = [
+        'overall' => OverallReport::class,
         'day' => DayReport::class,
         'month' => MonthReport::class,
     ];

@@ -19,6 +19,6 @@ class ReportController extends Controller
             ->make($validated['type'])
             ->generate($request->user());
 
-        return response()->json($report);
+        return $this->respond($report);
     }
 }
