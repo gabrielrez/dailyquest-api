@@ -53,6 +53,7 @@ Route::middleware('auth:api')->group(function () {
     Route::patch('users', [UsersController::class, 'updateProfile'])->name('users.update');
 
     // Report
+    Route::get('/reports', [ReportController::class, 'index'])->name('report.index');
     Route::post('/reports', [ReportController::class, 'generate'])->name('report.generate');
     Route::post('/reports/queue', [ReportController::class, 'queueReport'])->name('report.generate.queue');
 });

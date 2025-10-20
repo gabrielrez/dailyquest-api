@@ -9,6 +9,7 @@ use App\Http\Services\Reports\OverallReport;
 use App\Jobs\GenerateReportJob;
 use App\Models\User;
 use Carbon\Carbon;
+use Illuminate\Http\Request;
 use InvalidArgumentException;
 
 class ReportService
@@ -42,5 +43,16 @@ class ReportService
         if (!$existing_report) {
             GenerateReportJob::dispatch($user, $type);
         }
+    }
+
+    public function filter(Request $request)
+    {
+        $reports = $request->user()->reports();
+
+        if ($request->has('type')) {
+            $reports->where('type', $request->query('type'));
+        }
+
+        return $reports->get();
     }
 }
