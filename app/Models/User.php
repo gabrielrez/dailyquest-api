@@ -96,6 +96,11 @@ class User extends Authenticatable implements JWTSubject
         return $this->hasMany(Goal::class, 'owner_id');
     }
 
+    public function reports(): HasMany
+    {
+        return $this->hasMany(Report::class);
+    }
+
     /**
      * Profile picture URL.
      *
