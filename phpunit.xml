@@ -12,6 +12,11 @@
             <directory>tests/Feature</directory>
         </testsuite>
     </testsuites>
+    <coverage processUncoveredFiles="true">
+        <include>
+            <directory>./app</directory>
+        </include>
+    </coverage>
     <source>
         <include>
             <directory>app</directory>
