@@ -14,37 +14,38 @@ beforeEach(function () {
     $this->goalService = app()->make(GoalService::class);
 });
 
-test('marks collection as completed when all goals are done', function () {
-    $collection = Collection::factory()->create(['status' => CollectionStatusEnum::IN_PROGRESS]);
-    $goal1 = Goal::factory()->for($collection)->create(['status' => GoalStatusEnum::TODO->value]);
-    Goal::factory()->for($collection)->create(['status' => GoalStatusEnum::DONE->value]);
+describe('updateGoalAndCollectionStatus', function () {
+    test('marks collection as completed when all goals are done', function () {
+        $collection = Collection::factory()->create(['status' => CollectionStatusEnum::IN_PROGRESS]);
+        $goal1 = Goal::factory()->for($collection)->create(['status' => GoalStatusEnum::TODO->value]);
+        Goal::factory()->for($collection)->create(['status' => GoalStatusEnum::DONE->value]);
 
-    $status_done = GoalStatusEnum::DONE->value;
-    $result = $this->goalService->updateGoalAndCollectionStatus($goal1, $collection, $status_done);
+        $status_done = GoalStatusEnum::DONE->value;
+        $result = $this->goalService->updateGoalAndCollectionStatus($goal1, $collection, $status_done);
 
-    expect($result['goal']->status)->toBe($status_done);
-    expect($result['collection']->status)->toBe(CollectionStatusEnum::COMPLETED->value);
-});
+        expect($result['goal']->status)->toBe($status_done);
+        expect($result['collection']->status)->toBe(CollectionStatusEnum::COMPLETED->value);
+    });
 
-test('sets collection back to in progress when a goal status changes from done to doing', function () {
-    $collection = Collection::factory()->create(['status' => CollectionStatusEnum::COMPLETED]);
-    $goal1 = Goal::factory()->for($collection)->create(['status' => GoalStatusEnum::DONE->value]);
-    Goal::factory()->for($collection)->create(['status' => GoalStatusEnum::DONE->value]);
+    test('sets collection back to in progress when a goal status changes from done to doing', function () {
+        $collection = Collection::factory()->create(['status' => CollectionStatusEnum::COMPLETED]);
+        $goal1 = Goal::factory()->for($collection)->create(['status' => GoalStatusEnum::DONE->value]);
+        Goal::factory()->for($collection)->create(['status' => GoalStatusEnum::DONE->value]);
 
-    $result = $this->goalService->updateGoalAndCollectionStatus($goal1, $collection, GoalStatusEnum::DOING->value);
+        $result = $this->goalService->updateGoalAndCollectionStatus($goal1, $collection, GoalStatusEnum::DOING->value);
 
-    expect($result['goal']->status)->toBe(GoalStatusEnum::DOING->value);
-    expect($result['collection']->status)->toBe(CollectionStatusEnum::IN_PROGRESS->value);
-});
+        expect($result['goal']->status)->toBe(GoalStatusEnum::DOING->value);
+        expect($result['collection']->status)->toBe(CollectionStatusEnum::IN_PROGRESS->value);
+    });
 
-test('keeps collection in progress when not all goals are completed', function () {
-    $collection = Collection::factory()->create(['status' => CollectionStatusEnum::IN_PROGRESS]);
-    $goal1 = Goal::factory()->for($collection)->create(['status' => GoalStatusEnum::TODO->value]);
-    Goal::factory()->for($collection)->create(['status' => GoalStatusEnum::TODO->value]);
+    test('keeps collection in progress when not all goals are completed', function () {
+        $collection = Collection::factory()->create(['status' => CollectionStatusEnum::IN_PROGRESS]);
+        $goal1 = Goal::factory()->for($collection)->create(['status' => GoalStatusEnum::TODO->value]);
+        Goal::factory()->for($collection)->create(['status' => GoalStatusEnum::TODO->value]);
 
-    $status_done = GoalStatusEnum::DONE->value;
-    $result = $this->goalService->updateGoalAndCollectionStatus($goal1, $collection, $status_done);
+        $status_done = GoalStatusEnum::DONE->value;
+        $result = $this->goalService->updateGoalAndCollectionStatus($goal1, $collection, $status_done);
 
-    expect($result['goal']->status)->toBe($status_done);
-    expect($result['collection']->status)->toBe(CollectionStatusEnum::IN_PROGRESS->value);
+        expect($result['collection']->status)->toBe(CollectionStatusEnum::IN_PROGRESS->value);
+    });
 });
