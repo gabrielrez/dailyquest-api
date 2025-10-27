@@ -6,6 +6,7 @@ use App\Http\Requests\ReportRequest;
 use App\Http\Services\ReportService;
 use App\Models\Report;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Redis;
 
 class ReportController extends Controller
 {
@@ -27,9 +28,10 @@ class ReportController extends Controller
     {
         $validated = $request->validated();
 
-        $report = $this->reportService
-            ->make($validated['type'])
-            ->generate($request->user());
+        $report = $this->reportService->generateCachedReport(
+            $request->user(),
+            $validated['type']
+        );
 
         return $this->respond($report);
     }

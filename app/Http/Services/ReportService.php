@@ -10,6 +10,7 @@ use App\Jobs\GenerateReportJob;
 use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Redis;
 use InvalidArgumentException;
 
 class ReportService
@@ -20,6 +21,8 @@ class ReportService
         'month' => MonthReport::class,
     ];
 
+    protected int $cache_timeout = 300;
+
     public function make(string $type): ReportInterface
     {
         if (!isset($this->types[$type])) {
@@ -27,6 +30,23 @@ class ReportService
         }
 
         return new $this->types[$type];
+    }
+
+    public function generateCachedReport(User $user, string $type): array|string
+    {
+        $cache_key = "report:{$user->id}:{$type}";
+
+        if ($cached = Redis::get($cache_key)) {
+            return json_decode($cached, true);
+        }
+
+        $report = $this
+            ->make($type)
+            ->generate($user);
+
+        Redis::setex($cache_key, $this->cache_timeout, json_encode($report));
+
+        return $report;
     }
 
     public function resolveGenerateReport(User $user, ?string $type = 'month'): void
