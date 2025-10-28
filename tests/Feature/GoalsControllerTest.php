@@ -39,6 +39,64 @@ test('user can create goal', function () {
     expect($goal->order)->toBe(1);
 });
 
+test('user can create goals in batch', function () {
+    $collection = Collection::factory()->create();
+
+    /** @var \App\Models\User $user */
+    $user = User::factory()->create();
+    $collection->users()->attach($user);
+
+    $this->actingAs($user);
+
+    $response = $this->postJson(route('collections.goals.store.batch', [
+        'collection' => $collection,
+    ]), [
+        'goals' => [
+            [
+                'name' => 'Goal 1',
+                'description' => 'Goal description',
+                'status' => 'to_do',
+            ],
+            [
+                'name' => 'Goal 2',
+                'description' => 'Goal description',
+                'status' => 'to_do',
+            ],
+            [
+                'name' => 'Goal 3',
+                'description' => 'Goal description',
+                'status' => 'to_do',
+            ]
+        ]
+    ]);
+
+    $response->assertCreated();
+
+    $this->assertDatabaseHas('goals', [
+        'collection_id' => $collection->id,
+        'owner_id'      => $user->id,
+        'name'          => 'Goal 1',
+        'description'   => 'Goal description',
+        'status'        => 'to_do',
+    ]);
+
+    $this->assertDatabaseHas('goals', [
+        'collection_id' => $collection->id,
+        'owner_id'      => $user->id,
+        'name'          => 'Goal 2',
+        'description'   => 'Goal description',
+        'status'        => 'to_do',
+    ]);
+
+    $this->assertDatabaseHas('goals', [
+        'collection_id' => $collection->id,
+        'owner_id'      => $user->id,
+        'name'          => 'Goal 3',
+        'description'   => 'Goal description',
+        'status'        => 'to_do',
+    ]);
+});
+
 test('goal order increments within collection', function () {
     $collection = Collection::factory()->create();
 
