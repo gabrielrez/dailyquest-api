@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Enums\GoalStatusEnum;
 use App\Http\Requests\GoalAssignUserRequest;
 use App\Http\Requests\GoalCreateRequest;
 use App\Http\Requests\GoalReorderRequest;
@@ -11,6 +12,7 @@ use App\Models\Collection;
 use App\Models\Goal;
 use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rules\Enum;
 
 class GoalsController extends Controller
 {
@@ -79,6 +81,26 @@ class GoalsController extends Controller
         return $this->respondCreated(
             $this->service->create($request->validated(), $collection, $user)
         );
+    }
+
+    public function storeBatch(Request $request, Collection $collection)
+    {
+        $user = $request->user();
+
+        if (!$collection->belongsToUser($user)) {
+            return $this->failForbidden('You are not authorized to access this collection');
+        }
+
+        $validated = $request->validate([
+            'goals' => 'required|array|min:1',
+            'goals.*.name' => 'required|string|max:45',
+            'goals.*.description' => 'sometimes|string|max:255',
+            'goals.*.status' => ['sometimes', new Enum(GoalStatusEnum::class)],
+        ]);
+
+        $this->service->createBatch($validated['goals'], $collection, $user);
+        
+        return $this->respondCreated('Goals created');
     }
 
     public function update(GoalCreateRequest $request, Collection $collection, Goal $goal)

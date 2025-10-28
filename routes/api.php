@@ -39,6 +39,7 @@ Route::middleware('auth:api')->group(function () {
     Route::get('collections/{collection}/goals', [GoalsController::class, 'index'])->name('collections.goals.index');
     Route::get('collections/{collection}/goals/{goal}', [GoalsController::class, 'show'])->name('collections.goals.show');
     Route::post('collections/{collection}/goals', [GoalsController::class, 'store'])->name('collections.goals.store');
+    Route::post('collections/{collection}/goals/batch', [GoalsController::class, 'storeBatch'])->name('collections.goals.store.batch');
     Route::put('collections/{collection}/goals/{goal}', [GoalsController::class, 'update'])->name('collections.goals.update');
     Route::patch('collections/{collection}/goals/{goal}/status', [GoalsController::class, 'updateStatus'])->name('collections.goals.update-status');
     Route::patch('collections/{collection}/goals/reorder', [GoalsController::class, 'reorder'])->name('collections.goals.reorder');

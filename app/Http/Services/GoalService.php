@@ -105,6 +105,15 @@ class GoalService
         ]);
     }
 
+    public function createBatch(array $goals_data, Collection $collection, User $user): void
+    {
+        DB::transaction(function () use ($goals_data, $collection, $user) {
+            foreach ($goals_data as $goal_data) {
+                $this->create($goal_data, $collection, $user);
+            }
+        });
+    }
+
     public function reorder(array $goals_data, Collection $collection): void
     {
         DB::transaction(function () use ($goals_data, $collection) {
