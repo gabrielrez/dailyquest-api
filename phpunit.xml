@@ -12,10 +12,11 @@
             <directory>tests/Feature</directory>
         </testsuite>
     </testsuites>
-    <coverage processUncoveredFiles="true">
-        <include>
-            <directory>./app</directory>
-        </include>
+    <coverage>
+        <report>
+            <html outputDirectory="build/coverage"/>
+            <text outputFile="php://stdout"/>
+        </report>
     </coverage>
     <source>
         <include>
