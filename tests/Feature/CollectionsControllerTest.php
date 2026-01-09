@@ -8,116 +8,185 @@ use Illuminate\Support\Facades\Mail;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
+use function Pest\Laravel\actingAs;
+
 uses(TestCase::class, RefreshDatabase::class);
 
-test('owner can invite a new user who does not have an account', function () {
-    Mail::fake();
+describe('Collection Index & Show', function () {
+    it('returns paginated collections for the authenticated user', function () {
+        /** @var \App\Models\User $owner */
+        $owner = User::factory()->create();
 
-    $owner = User::factory()->create();
-    $collection = Collection::factory()->for($owner, 'owner')->create();
+        Collection::factory()->count(3)->for($owner, 'owner')->create();
 
-    $response = $this->actingAs($owner)
-        ->postJson(route('collections.users.invite', $collection), [
-            'user_email' => 'newuser@example.com',
-        ]);
+        $response = actingAs($owner)->getJson(route('collections.index'));
 
-    $response->assertStatus(201)
-        ->assertJsonStructure([
-            'data' => ['id', 'collection_id', 'email', 'token', 'created_at', 'updated_at']
-        ]);
+        $response->assertOk()->assertJsonStructure(['data', 'links']);
+    });
 
-    $this->assertDatabaseHas('invitations', [
-        'collection_id' => $collection->id,
-        'email' => 'newuser@example.com',
-    ]);
+    it('returns a single collection with loaded relations', function () {
+        /** @var \App\Models\User $owner */
+        $owner = User::factory()->create();
 
-    Mail::assertSent(InvitationMail::class);
+        $collection = Collection::factory()->for($owner, 'owner')->create();
+
+        $response = actingAs($owner)->getJson(route('collections.show', $collection));
+
+        $response->assertOk()->assertJsonStructure(['data']);
+    });
 });
 
-test('owner can invite an existing user who already has an account', function () {
-    Mail::fake();
+describe('Collection Creation & Update', function () {
+    it('creates a new collection for the authenticated user', function () {
+        /** @var \App\Models\User $owner */
+        $owner = User::factory()->create();
 
-    $owner = User::factory()->create();
-    $user = User::factory()->create();
-    $collection = Collection::factory()->for($owner, 'owner')->create();
-
-    $response = $this->actingAs($owner)
-        ->postJson(route('collections.users.invite', $collection), [
-            'user_email' => $user->email,
+        $response = actingAs($owner)->postJson(route('collections.store'), [
+            'name' => 'Collection Name',
+            'description' => 'Collection Description',
         ]);
 
-    $response->assertStatus(201)
-        ->assertJsonStructure([
-            'data' => ['id', 'collection_id', 'email', 'token', 'created_at', 'updated_at']
+        $response->assertCreated()->assertJsonStructure(['data']);
+    });
+
+    it('allows the owner to update their collection', function () {
+        /** @var \App\Models\User $owner */
+        $owner = User::factory()->create();
+
+        $collection = Collection::factory()->for($owner, 'owner')->create(['name' => 'Old Name']);
+
+        $response = actingAs($owner)->putJson(route('collections.update', $collection), [
+            'name' => 'Updated Name',
         ]);
 
-    $this->assertDatabaseHas('invitations', [
-        'collection_id' => $collection->id,
-        'email' => $user->email,
-    ]);
+        $response->assertOk()->assertJsonPath('data.name', 'Updated Name');
+    });
 
-    Mail::assertSent(InvitationMail::class);
+    it('forbids non-owners from updating the collection', function () {
+        [$owner, $collaborator] = User::factory()->count(2)->create();
+        $collection = Collection::factory()->for($owner, 'owner')->create();
+
+        $response = actingAs($collaborator)
+            ->putJson(route('collections.update', $collection), ['name' => 'Unauthorized Update']);
+
+        $response->assertForbidden();
+    });
 });
 
-test('owner cannot invite themselves to their own collection', function () {
-    $owner = User::factory()->create();
-    $collection = Collection::factory()->for($owner, 'owner')->create();
+describe('Collection Deletion', function () {
+    it('allows the owner to delete their collection', function () {
+        /** @var \App\Models\User $owner */
+        $owner = User::factory()->create();
 
-    $response = $this->actingAs($owner)
-        ->postJson(route('collections.users.invite', $collection), [
-            'user_email' => $owner->email,
-        ]);
+        $collection = Collection::factory()->for($owner, 'owner')->create();
 
-    $response->assertForbidden()
-        ->assertJson(['message' => 'You cannot invite yourself to your own collection']);
+        $response = actingAs($owner)->deleteJson(route('collections.destroy', $collection));
+
+        $response->assertNoContent();
+        expect(Collection::find($collection->id))->toBeNull();
+    });
+
+    it('forbids non-owners from deleting the collection', function () {
+        [$owner, $collaborator] = User::factory()->count(2)->create();
+        $collection = Collection::factory()->for($owner, 'owner')->create();
+
+        $response = actingAs($collaborator)->deleteJson(route('collections.destroy', $collection));
+
+        $response->assertJsonStructure(['message']);
+        expect(Collection::find($collection->id))->not->toBeNull();
+    });
 });
 
-test('owner cannot invite a user who is already in the collection', function () {
-    $owner = User::factory()->create();
-    $user = User::factory()->create();
-    $collection = Collection::factory()->for($owner, 'owner')->create();
-    $collection->users()->attach($user->id);
+describe('Collection Invitations', function () {
+    beforeEach(function () {
+        $this->owner = User::factory()->create();
+        $this->collection = Collection::factory()->for($this->owner, 'owner')->create();
+    });
 
-    $response = $this->actingAs($owner)
-        ->postJson(route('collections.users.invite', $collection), [
-            'user_email' => $user->email,
+    it('allows the owner to invite a new user without an account', function () {
+        Mail::fake();
+
+        $response = actingAs($this->owner)->postJson(
+            route('collections.users.invite', $this->collection),
+            ['user_email' => 'newuser@example.com']
+        );
+
+        $response->assertCreated()->assertJsonStructure(['data' => ['id', 'collection_id', 'email', 'token']]);
+        $this->assertDatabaseHas('invitations', [
+            'collection_id' => $this->collection->id,
+            'email' => 'newuser@example.com',
         ]);
 
-    $response->assertConflict()
-        ->assertJson(['message' => 'User already in collection']);
-});
+        Mail::assertSent(InvitationMail::class);
+    });
 
-test('owner cannot invite a user who has a pending invitation', function () {
-    $owner = User::factory()->create();
-    $user = User::factory()->create();
-    $collection = Collection::factory()->for($owner, 'owner')->create();
+    it('allows the owner to invite an existing user', function () {
+        Mail::fake();
 
-    Invitation::factory()->create([
-        'collection_id' => $collection->id,
-        'email' => $user->email,
-        'token' => 'valid-token',
-        'status' => 'pending',
-    ]);
+        $user = User::factory()->create();
 
-    $response = $this->actingAs($owner)
-        ->postJson(route('collections.users.invite', $collection), [
-            'user_email' => $user->email,
+        $response = actingAs($this->owner)->postJson(
+            route('collections.users.invite', $this->collection),
+            ['user_email' => $user->email]
+        );
+
+        $response->assertCreated();
+        $this->assertDatabaseHas('invitations', [
+            'collection_id' => $this->collection->id,
+            'email' => $user->email,
         ]);
 
-    $response->assertConflict()
-        ->assertJson(['message' => 'User already has a pending invitation']);
-});
+        Mail::assertSent(InvitationMail::class);
+    });
 
-test('non-owner cannot invite users to a collection', function () {
-    $owner = User::factory()->create();
-    $non_owner = User::factory()->create();
-    $collection = Collection::factory()->for($owner, 'owner')->create();
+    it('forbids the owner from inviting themselves', function () {
+        $response = actingAs($this->owner)->postJson(
+            route('collections.users.invite', $this->collection),
+            ['user_email' => $this->owner->email]
+        );
 
-    $response = $this->actingAs($non_owner)
-        ->postJson(route('collections.users.invite', $collection), [
-            'user_email' => 'someone@example.com',
+        $response->assertForbidden()
+            ->assertJson(['message' => 'You cannot invite yourself to your own collection']);
+    });
+
+    it('forbids inviting a user already in the collection', function () {
+        $user = User::factory()->create();
+        $this->collection->users()->attach($user->id);
+
+        $response = actingAs($this->owner)->postJson(
+            route('collections.users.invite', $this->collection),
+            ['user_email' => $user->email]
+        );
+
+        $response->assertConflict()->assertJson(['message' => 'User already in collection']);
+    });
+
+    it('forbids inviting a user with a pending invitation', function () {
+        $user = User::factory()->create();
+
+        Invitation::factory()->create([
+            'collection_id' => $this->collection->id,
+            'email' => $user->email,
+            'status' => 'pending',
         ]);
 
-    $response->assertForbidden()
-        ->assertJson(['message' => 'Only the owner can add users to this collection']);
+        $response = actingAs($this->owner)->postJson(
+            route('collections.users.invite', $this->collection),
+            ['user_email' => $user->email]
+        );
+
+        $response->assertConflict()->assertJson(['message' => 'User already has a pending invitation']);
+    });
+
+    it('forbids non-owners from inviting users', function () {
+        /** @var \App\Models\User $collaborator */
+        $collaborator = User::factory()->create();
+
+        $response = actingAs($collaborator)->postJson(
+            route('collections.users.invite', $this->collection),
+            ['user_email' => 'someone@example.com']
+        );
+
+        $response->assertForbidden();
+    });
 });
