@@ -1,0 +1,978 @@
+openapi: 3.0.3
+info:
+  title: DailyQuest API
+  description: |
+    API REST para gerenciamento colaborativo de metas (goals) organizadas em
+    coleções (collections). Autenticação via JWT Bearer token.
+  version: "1.0.0"
+  license:
+    name: MIT
+servers:
+  - url: http://localhost:8000/api
+    description: Local
+
+tags:
+  - name: Auth
+    description: Registro, login, logout e status da API
+  - name: Users
+    description: Perfil do usuário autenticado
+  - name: Collections
+    description: Coleções compartilhadas de metas
+  - name: Invitations
+    description: Convites para colaborar em coleções
+  - name: Goals
+    description: Metas dentro de uma coleção
+  - name: Reports
+    description: Relatórios de progresso do usuário
+
+security:
+  - bearerAuth: []
+
+paths:
+  /:
+    get:
+      tags: [Auth]
+      summary: Status da API
+      operationId: getApiStatus
+      security: []
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Hello World, DailyQuest API!"
+
+  /ping:
+    get:
+      tags: [Auth]
+      summary: Health check
+      operationId: ping
+      security: []
+      responses:
+        "200":
+          description: OK
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: pong
+
+  /login:
+    get:
+      tags: [Auth]
+      summary: Sempre retorna 401 (rota usada pelo Laravel ao redirecionar não autenticados)
+      operationId: loginRedirect
+      security: []
+      responses:
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+    post:
+      tags: [Auth]
+      summary: Login
+      operationId: login
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, password]
+              properties:
+                email: { type: string, format: email }
+                password: { type: string, format: password }
+      responses:
+        "200":
+          description: Login efetuado
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      token: { type: string }
+                      token_type: { type: string, example: bearer }
+        "401":
+          description: Credenciais inválidas
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorResponse" }
+        "422":
+          $ref: "#/components/responses/ValidationError"
+
+  /register:
+    post:
+      tags: [Auth]
+      summary: Registro de novo usuário
+      operationId: register
+      security: []
+      description: |
+        Se um `token` de convite válido e pendente for informado, o usuário
+        já é vinculado à coleção correspondente automaticamente (sem checar expiração).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [full_name, username, email, password, password_confirmation]
+              properties:
+                full_name: { type: string, maxLength: 45 }
+                username: { type: string, maxLength: 45 }
+                email: { type: string, format: email, maxLength: 255 }
+                password: { type: string, format: password }
+                password_confirmation: { type: string, format: password }
+                token:
+                  type: string
+                  nullable: true
+                  description: Token de convite de coleção (opcional)
+      responses:
+        "201":
+          description: Usuário criado
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      user: { $ref: "#/components/schemas/User" }
+                      token: { type: string }
+        "422":
+          $ref: "#/components/responses/ValidationError"
+
+  /logout:
+    post:
+      tags: [Auth]
+      summary: Logout do usuário autenticado
+      operationId: logout
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message: { type: string, example: "Logout successful" }
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /collections/invitations/accept:
+    post:
+      tags: [Invitations]
+      summary: Aceita um convite pendente
+      operationId: acceptInvitation
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [token]
+              properties:
+                token: { type: string }
+      responses:
+        "200":
+          description: Convite aceito
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message: { type: string, example: "Invitation accepted" }
+        "403":
+          description: Convite expirado
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorResponse" }
+        "404":
+          description: Token inválido
+        "409":
+          description: Convite já aceito
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorResponse" }
+        "422":
+          $ref: "#/components/responses/ValidationError"
+
+  /users/me:
+    get:
+      tags: [Users]
+      summary: Perfil do usuário autenticado
+      operationId: getMyProfile
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data: { $ref: "#/components/schemas/User" }
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /users:
+    patch:
+      tags: [Users]
+      summary: Atualiza full_name e/ou username do usuário autenticado
+      operationId: updateProfile
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                full_name: { type: string, maxLength: 45 }
+                username: { type: string, maxLength: 45 }
+      responses:
+        "200":
+          description: Usuário atualizado
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data: { $ref: "#/components/schemas/User" }
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "422":
+          $ref: "#/components/responses/ValidationError"
+
+  /users/profile-picture:
+    post:
+      tags: [Users]
+      summary: Upload da foto de perfil
+      operationId: uploadProfilePicture
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [profile_picture]
+              properties:
+                profile_picture:
+                  type: string
+                  format: binary
+                  description: "Imagem jpeg,png,jpg,gif,webp — máx. 2048 KB"
+      responses:
+        "200":
+          description: Foto atualizada
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      profile_picture: { type: string, format: uri }
+        "400":
+          description: Arquivo ausente
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorResponse" }
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "422":
+          $ref: "#/components/responses/ValidationError"
+
+  /collections:
+    get:
+      tags: [Collections]
+      summary: Lista paginada das coleções do usuário
+      operationId: listCollections
+      parameters:
+        - name: owner
+          in: query
+          schema: { type: boolean }
+          description: Se true, retorna apenas coleções onde o usuário é dono
+        - name: status
+          in: query
+          schema: { $ref: "#/components/schemas/CollectionStatus" }
+        - name: per_page
+          in: query
+          schema: { type: integer, default: 10 }
+      responses:
+        "200":
+          description: Página de coleções
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/PaginatedResponse"
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items: { $ref: "#/components/schemas/Collection" }
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+    post:
+      tags: [Collections]
+      summary: Cria uma nova coleção
+      operationId: createCollection
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/CollectionInput" }
+      responses:
+        "201":
+          description: Coleção criada
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data: { $ref: "#/components/schemas/Collection" }
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "422":
+          $ref: "#/components/responses/ValidationError"
+
+  /collections/{collection}:
+    parameters:
+      - $ref: "#/components/parameters/CollectionId"
+    get:
+      tags: [Collections]
+      summary: Detalhes de uma coleção (com owner, users e goals)
+      operationId: getCollection
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data: { $ref: "#/components/schemas/Collection" }
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+    put:
+      tags: [Collections]
+      summary: Atualiza uma coleção (somente o dono)
+      operationId: updateCollection
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/CollectionInput" }
+      responses:
+        "200":
+          description: Coleção atualizada
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data: { $ref: "#/components/schemas/Collection" }
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "422":
+          $ref: "#/components/responses/ValidationError"
+    delete:
+      tags: [Collections]
+      summary: Remove uma coleção (somente o dono)
+      operationId: deleteCollection
+      responses:
+        "204":
+          description: Removida com sucesso
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+
+  /collections/{collection}/users:
+    parameters:
+      - $ref: "#/components/parameters/CollectionId"
+    post:
+      tags: [Collections]
+      summary: Convida um usuário (por e-mail) para colaborar na coleção (somente o dono)
+      operationId: inviteUserToCollection
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [user_email]
+              properties:
+                user_email: { type: string, format: email }
+      responses:
+        "201":
+          description: Convite criado
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data: { $ref: "#/components/schemas/Invitation" }
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "409":
+          $ref: "#/components/responses/Conflict"
+        "422":
+          $ref: "#/components/responses/ValidationError"
+    delete:
+      tags: [Collections]
+      summary: Remove um colaborador da coleção (somente o dono)
+      operationId: removeUserFromCollection
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [user_email]
+              properties:
+                user_email: { type: string, format: email }
+      responses:
+        "200":
+          description: Usuário removido
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message: { type: string, example: "User removed from collection" }
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "422":
+          $ref: "#/components/responses/ValidationError"
+
+  /goals:
+    get:
+      tags: [Goals]
+      summary: Lista as metas de uma coleção específica (via query string)
+      operationId: listGoalsByQuery
+      parameters:
+        - name: collection_id
+          in: query
+          required: true
+          schema: { type: integer }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items: { $ref: "#/components/schemas/Goal" }
+        "400":
+          description: collection_id ausente
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorResponse" }
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /collections/{collection}/goals:
+    parameters:
+      - $ref: "#/components/parameters/CollectionId"
+    get:
+      tags: [Goals]
+      summary: Lista as metas da coleção (ordenadas por order)
+      operationId: listGoals
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items: { $ref: "#/components/schemas/Goal" }
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+    post:
+      tags: [Goals]
+      summary: Cria uma nova meta na coleção
+      operationId: createGoal
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/GoalInput" }
+      responses:
+        "201":
+          description: Meta criada
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data: { $ref: "#/components/schemas/Goal" }
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "422":
+          $ref: "#/components/responses/ValidationError"
+
+  /collections/{collection}/goals/reorder:
+    parameters:
+      - $ref: "#/components/parameters/CollectionId"
+    patch:
+      tags: [Goals]
+      summary: Reordena as metas da coleção
+      operationId: reorderGoals
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [goals_data]
+              properties:
+                goals_data:
+                  type: array
+                  items:
+                    type: object
+                    required: [id]
+                    properties:
+                      id: { type: integer }
+      responses:
+        "200":
+          description: Metas reordenadas
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      message: { type: string, example: "Goals reordered" }
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "422":
+          $ref: "#/components/responses/ValidationError"
+
+  /collections/{collection}/goals/{goal}:
+    parameters:
+      - $ref: "#/components/parameters/CollectionId"
+      - $ref: "#/components/parameters/GoalId"
+    get:
+      tags: [Goals]
+      summary: Detalhes de uma meta
+      operationId: getGoal
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data: { $ref: "#/components/schemas/Goal" }
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    put:
+      tags: [Goals]
+      summary: Atualiza uma meta (somente o dono da coleção)
+      operationId: updateGoal
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/GoalInput" }
+      responses:
+        "200":
+          description: Meta atualizada
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data: { $ref: "#/components/schemas/Goal" }
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "422":
+          $ref: "#/components/responses/ValidationError"
+    delete:
+      tags: [Goals]
+      summary: Remove uma meta
+      operationId: deleteGoal
+      responses:
+        "204":
+          description: Removida com sucesso
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /collections/{collection}/goals/{goal}/status:
+    parameters:
+      - $ref: "#/components/parameters/CollectionId"
+      - $ref: "#/components/parameters/GoalId"
+    patch:
+      tags: [Goals]
+      summary: Atualiza apenas o status da meta (recalcula status da coleção)
+      operationId: updateGoalStatus
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [status]
+              properties:
+                status: { $ref: "#/components/schemas/GoalStatus" }
+      responses:
+        "200":
+          description: Meta e coleção atualizadas
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      goal: { $ref: "#/components/schemas/Goal" }
+                      collection: { $ref: "#/components/schemas/Collection" }
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "422":
+          $ref: "#/components/responses/ValidationError"
+
+  /collections/{collection}/goals/{goal}/assign:
+    parameters:
+      - $ref: "#/components/parameters/CollectionId"
+      - $ref: "#/components/parameters/GoalId"
+    patch:
+      tags: [Goals]
+      summary: Atribui (ou remove a atribuição de) um colaborador à meta
+      operationId: assignGoal
+      description: |
+        Se `user_username` for omitido ou vazio, remove a atribuição atual
+        (`assigned_to = null`).
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                user_username:
+                  type: string
+                  nullable: true
+      responses:
+        "200":
+          description: Meta atualizada
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data: { $ref: "#/components/schemas/Goal" }
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "422":
+          $ref: "#/components/responses/ValidationError"
+
+  /reports:
+    get:
+      tags: [Reports]
+      summary: Lista os relatórios já gerados para o usuário autenticado
+      operationId: listReports
+      parameters:
+        - name: type
+          in: query
+          schema: { $ref: "#/components/schemas/ReportType" }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items: { $ref: "#/components/schemas/Report" }
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+    post:
+      tags: [Reports]
+      summary: Gera e retorna um relatório de forma síncrona (não persiste)
+      operationId: generateReport
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [type]
+              properties:
+                type: { $ref: "#/components/schemas/ReportType" }
+      responses:
+        "200":
+          description: Relatório gerado (formato varia conforme o type)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    description: "Estrutura varia conforme `type` (overall/day/month)"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "422":
+          $ref: "#/components/responses/ValidationError"
+
+  /reports/queue:
+    post:
+      tags: [Reports]
+      summary: Enfileira a geração assíncrona do relatório do mês atual
+      operationId: queueReport
+      description: |
+        Evita duplicar se já existir um relatório do mesmo `type` gerado no
+        mês corrente.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [type]
+              properties:
+                type: { $ref: "#/components/schemas/ReportType" }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message: { type: string, example: "Report Queued" }
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "422":
+          $ref: "#/components/responses/ValidationError"
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  parameters:
+    CollectionId:
+      name: collection
+      in: path
+      required: true
+      schema: { type: integer }
+    GoalId:
+      name: goal
+      in: path
+      required: true
+      schema: { type: integer }
+
+  responses:
+    Unauthorized:
+      description: Token ausente/inválido ou credenciais inválidas
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/ErrorResponse" }
+    Forbidden:
+      description: Usuário autenticado sem permissão sobre o recurso
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/ErrorResponse" }
+    NotFound:
+      description: Recurso não encontrado / não pertence ao contexto informado
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/ErrorResponse" }
+    Conflict:
+      description: Conflito de estado
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/ErrorResponse" }
+    ValidationError:
+      description: Erro de validação
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/ValidationErrorResponse" }
+
+  schemas:
+    ErrorResponse:
+      type: object
+      properties:
+        error: { type: string, example: "not_found" }
+        message: { type: string, example: "Resource not found" }
+
+    ValidationErrorResponse:
+      type: object
+      properties:
+        message: { type: string }
+        errors:
+          type: object
+          additionalProperties:
+            type: array
+            items: { type: string }
+
+    PaginatedResponse:
+      type: object
+      properties:
+        current_page: { type: integer }
+        per_page: { type: integer }
+        total: { type: integer }
+        last_page: { type: integer }
+
+    CollectionStatus:
+      type: string
+      enum: [in_progress, completed, expired]
+
+    GoalStatus:
+      type: string
+      enum: [to_do, doing, done]
+
+    InvitationStatus:
+      type: string
+      enum: [pending, accepted]
+
+    ReportType:
+      type: string
+      enum: [overall, day, month]
+
+    User:
+      type: object
+      properties:
+        id: { type: integer }
+        full_name: { type: string }
+        username: { type: string }
+        email: { type: string, format: email }
+        profile_picture:
+          type: string
+          format: uri
+          nullable: true
+          description: Apenas presente em GET /users/me
+
+    CollectionInput:
+      type: object
+      required: [name]
+      properties:
+        name: { type: string, maxLength: 45 }
+        description: { type: string, maxLength: 100, nullable: true }
+        cyclic: { type: boolean }
+        deadline:
+          type: string
+          format: date
+          description: Deve ser posterior a hoje
+        is_collaborative: { type: boolean }
+        status: { $ref: "#/components/schemas/CollectionStatus" }
+
+    Collection:
+      type: object
+      properties:
+        id: { type: integer }
+        name: { type: string }
+        description: { type: string, nullable: true }
+        cyclic: { type: boolean }
+        deadline: { type: string, format: date, nullable: true }
+        is_collaborative: { type: boolean }
+        status: { $ref: "#/components/schemas/CollectionStatus" }
+        owner_id: { type: integer }
+        completed_at: { type: string, format: date-time, nullable: true }
+        owner: { $ref: "#/components/schemas/User" }
+        users:
+          type: array
+          items: { $ref: "#/components/schemas/User" }
+        goals:
+          type: array
+          items: { $ref: "#/components/schemas/Goal" }
+
+    GoalInput:
+      type: object
+      required: [name]
+      properties:
+        name: { type: string, maxLength: 45 }
+        description: { type: string, maxLength: 255 }
+        status: { $ref: "#/components/schemas/GoalStatus" }
+
+    Goal:
+      type: object
+      properties:
+        id: { type: integer }
+        name: { type: string }
+        description: { type: string, nullable: true }
+        status: { $ref: "#/components/schemas/GoalStatus" }
+        collection_id: { type: integer }
+        owner_id: { type: integer }
+        assigned_to: { type: integer, nullable: true }
+        order: { type: integer }
+        done_at: { type: string, format: date-time, nullable: true }
+        owner: { $ref: "#/components/schemas/User" }
+
+    Invitation:
+      type: object
+      properties:
+        id: { type: integer }
+        collection_id: { type: integer }
+        email: { type: string, format: email }
+        token: { type: string }
+        status: { $ref: "#/components/schemas/InvitationStatus" }
+        expires_at: { type: string, format: date-time }
+
+    Report:
+      type: object
+      properties:
+        id: { type: integer }
+        user_id: { type: integer }
+        type: { $ref: "#/components/schemas/ReportType" }
+        data: { type: object }
+        created_at: { type: string, format: date-time }
+        updated_at: { type: string, format: date-time }
