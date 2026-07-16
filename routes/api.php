@@ -14,7 +14,7 @@ Route::get('/', fn() => response()->json([
 
 Route::get('ping', fn() => 'pong');
 
-Route::get('login', fn() => throw new \App\Exceptions\UnauthorizedException('Unauthenticated'))->name('login');
+Route::get('login', fn() => abort(401, 'Unauthenticated'))->name('login');
 
 Route::post('login', [AuthController::class, 'login'])->name('auth.login');
 Route::post('register', [AuthController::class, 'register'])->name('auth.register');

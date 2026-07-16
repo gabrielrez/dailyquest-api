@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\ReportRequest;
+use App\Http\Resources\ReportResource;
 use App\Http\Services\ReportService;
 use App\Models\Report;
 use Illuminate\Http\Request;
@@ -18,9 +19,7 @@ class ReportController extends Controller
      */
     public function index(Request $request)
     {
-        return $this->respond(
-            $this->reportService->filter($request)
-        );
+        return ReportResource::collection($this->reportService->filter($request));
     }
 
     public function generate(ReportRequest $request)
@@ -31,7 +30,7 @@ class ReportController extends Controller
             ->make($validated['type'])
             ->generate($request->user());
 
-        return $this->respond($report);
+        return response()->json(['data' => $report]);
     }
 
     public function queueReport(ReportRequest $request)
@@ -40,6 +39,6 @@ class ReportController extends Controller
 
         $this->reportService->resolveGenerateReport($request->user(), $type);
 
-        return $this->respond('Report Queued');
+        return response()->json(['message' => 'Report Queued']);
     }
 }

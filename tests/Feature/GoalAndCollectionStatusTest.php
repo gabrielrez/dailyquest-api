@@ -1,5 +1,7 @@
 <?php
 
+namespace Tests\Feature;
+
 use App\Http\Enums\CollectionStatusEnum;
 use App\Http\Enums\GoalStatusEnum;
 use App\Http\Services\GoalService;
@@ -8,14 +10,21 @@ use App\Models\Goal;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
-uses(TestCase::class, RefreshDatabase::class);
+class GoalAndCollectionStatusTest extends TestCase
+{
+    use RefreshDatabase;
 
-beforeEach(function () {
-    $this->goalService = app()->make(GoalService::class);
-});
+    private GoalService $goalService;
 
-describe('updateGoalAndCollectionStatus', function () {
-    test('marks collection as completed when all goals are done', function () {
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $this->goalService = app()->make(GoalService::class);
+    }
+
+    public function test_marks_collection_as_completed_when_all_goals_are_done(): void
+    {
         $collection = Collection::factory()->create(['status' => CollectionStatusEnum::IN_PROGRESS]);
         $goal1 = Goal::factory()->for($collection)->create(['status' => GoalStatusEnum::TODO->value]);
         Goal::factory()->for($collection)->create(['status' => GoalStatusEnum::DONE->value]);
@@ -23,22 +32,24 @@ describe('updateGoalAndCollectionStatus', function () {
         $status_done = GoalStatusEnum::DONE->value;
         $result = $this->goalService->updateGoalAndCollectionStatus($goal1, $collection, $status_done);
 
-        expect($result['goal']->status)->toBe($status_done);
-        expect($result['collection']->status)->toBe(CollectionStatusEnum::COMPLETED->value);
-    });
+        $this->assertSame($status_done, $result['goal']->status);
+        $this->assertSame(CollectionStatusEnum::COMPLETED->value, $result['collection']->status);
+    }
 
-    test('sets collection back to in progress when a goal status changes from done to doing', function () {
+    public function test_sets_collection_back_to_in_progress_when_a_goal_status_changes_from_done_to_doing(): void
+    {
         $collection = Collection::factory()->create(['status' => CollectionStatusEnum::COMPLETED]);
         $goal1 = Goal::factory()->for($collection)->create(['status' => GoalStatusEnum::DONE->value]);
         Goal::factory()->for($collection)->create(['status' => GoalStatusEnum::DONE->value]);
 
         $result = $this->goalService->updateGoalAndCollectionStatus($goal1, $collection, GoalStatusEnum::DOING->value);
 
-        expect($result['goal']->status)->toBe(GoalStatusEnum::DOING->value);
-        expect($result['collection']->status)->toBe(CollectionStatusEnum::IN_PROGRESS->value);
-    });
+        $this->assertSame(GoalStatusEnum::DOING->value, $result['goal']->status);
+        $this->assertSame(CollectionStatusEnum::IN_PROGRESS->value, $result['collection']->status);
+    }
 
-    test('keeps collection in progress when not all goals are completed', function () {
+    public function test_keeps_collection_in_progress_when_not_all_goals_are_completed(): void
+    {
         $collection = Collection::factory()->create(['status' => CollectionStatusEnum::IN_PROGRESS]);
         $goal1 = Goal::factory()->for($collection)->create(['status' => GoalStatusEnum::TODO->value]);
         Goal::factory()->for($collection)->create(['status' => GoalStatusEnum::TODO->value]);
@@ -46,6 +57,6 @@ describe('updateGoalAndCollectionStatus', function () {
         $status_done = GoalStatusEnum::DONE->value;
         $result = $this->goalService->updateGoalAndCollectionStatus($goal1, $collection, $status_done);
 
-        expect($result['collection']->status)->toBe(CollectionStatusEnum::IN_PROGRESS->value);
-    });
-});
+        $this->assertSame(CollectionStatusEnum::IN_PROGRESS->value, $result['collection']->status);
+    }
+}

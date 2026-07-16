@@ -1,63 +1,71 @@
 <?php
 
+namespace Tests\Feature;
+
 use App\Models\Collection;
 use App\Models\Invitation;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
-uses(TestCase::class, RefreshDatabase::class);
+class InvitationsControllerTest extends TestCase
+{
+    use RefreshDatabase;
 
-test('user can accept a valid invitation', function () {
-    $collection = Collection::factory()->create();
-    $user = User::factory()->create();
+    public function test_user_can_accept_a_valid_invitation(): void
+    {
+        $collection = Collection::factory()->create();
+        $user = User::factory()->create();
 
-    $invitation = Invitation::factory()->create([
-        'collection_id' => $collection->id,
-        'email' => $user->email,
-        'token' => 'valid-token',
-        'status' => 'pending',
-    ]);
-
-    $response = $this->postJson(route('invitations.accept', [
-        'token' => 'valid-token',
-    ]));
-
-    $response->assertOk()
-        ->assertJson([
-            'message' => 'Invitation accepted',
+        $invitation = Invitation::factory()->create([
+            'collection_id' => $collection->id,
+            'email' => $user->email,
+            'token' => 'valid-token',
+            'status' => 'pending',
         ]);
 
-    $this->assertDatabaseHas('invitations', [
-        'id' => $invitation->id,
-        'status' => 'accepted',
-    ]);
+        $response = $this->postJson(route('invitations.accept', [
+            'token' => 'valid-token',
+        ]));
 
-    expect($collection->users()->where('users.id', $user->id)->exists())->toBeTrue();
-});
+        $response->assertOk()
+            ->assertJson([
+                'message' => 'Invitation accepted',
+            ]);
 
-test('cannot accept an expired invitation', function () {
-    $invitation = Invitation::factory()->expired()->create();
-
-    $response = $this->postJson(route('invitations.accept', [
-        'token' => $invitation->token,
-    ]));
-
-    $response->assertForbidden()
-        ->assertJson([
-            'message' => 'Invitation has expired',
+        $this->assertDatabaseHas('invitations', [
+            'id' => $invitation->id,
+            'status' => 'accepted',
         ]);
-});
 
-test('cannot accept already accepted invitation', function () {
-    $invitation = Invitation::factory()->create(['status' => 'accepted']);
+        $this->assertTrue($collection->users()->where('users.id', $user->id)->exists());
+    }
 
-    $response = $this->postJson(route('invitations.accept', [
-        'token' => $invitation->token,
-    ]));
+    public function test_cannot_accept_an_expired_invitation(): void
+    {
+        $invitation = Invitation::factory()->expired()->create();
 
-    $response->assertStatus(409)
-        ->assertJson([
-            'message' => 'Invitation already accepted',
-        ]);
-});
+        $response = $this->postJson(route('invitations.accept', [
+            'token' => $invitation->token,
+        ]));
+
+        $response->assertForbidden()
+            ->assertJson([
+                'message' => 'Invitation has expired',
+            ]);
+    }
+
+    public function test_cannot_accept_already_accepted_invitation(): void
+    {
+        $invitation = Invitation::factory()->create(['status' => 'accepted']);
+
+        $response = $this->postJson(route('invitations.accept', [
+            'token' => $invitation->token,
+        ]));
+
+        $response->assertStatus(409)
+            ->assertJson([
+                'message' => 'Invitation already accepted',
+            ]);
+    }
+}

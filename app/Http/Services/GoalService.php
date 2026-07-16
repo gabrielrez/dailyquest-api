@@ -2,9 +2,6 @@
 
 namespace App\Http\Services;
 
-use App\Exceptions\ConflictException;
-use App\Exceptions\ForbiddenException;
-use App\Exceptions\NotFoundException;
 use App\Http\Enums\CollectionStatusEnum;
 use App\Http\Enums\GoalStatusEnum;
 use App\Models\Collection;
@@ -81,11 +78,11 @@ class GoalService
         $user_to_assign = User::where('username', $username)->first();
 
         if (!$collection->belongsToUser($user_to_assign)) {
-            throw new ForbiddenException('The user is not a collaborator of this collection');
+            abort(403, 'The user is not a collaborator of this collection');
         }
 
         if ($goal->collection_id !== $collection->id) {
-            throw new NotFoundException('Goal not found in this collection');
+            abort(404, 'Goal not found in this collection');
         }
 
         $goal->update(['assigned_to' => $user_to_assign->id]);

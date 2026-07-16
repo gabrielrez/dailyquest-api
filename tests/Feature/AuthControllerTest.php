@@ -1,5 +1,7 @@
 <?php
 
+namespace Tests\Feature;
+
 use App\Models\Invitation;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -7,10 +9,12 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Tests\TestCase;
 
-uses(TestCase::class, RefreshDatabase::class);
+class AuthControllerTest extends TestCase
+{
+    use RefreshDatabase;
 
-describe('register', function () {
-    test('user can register without invitation', function () {
+    public function test_user_can_register_without_invitation(): void
+    {
         $response = $this->postJson(route('auth.register'), [
             'full_name' => 'Teste',
             'username' => 'teste',
@@ -24,48 +28,52 @@ describe('register', function () {
                 'data' => [
                     'user' => ['id', 'full_name', 'username', 'email'],
                     'token',
-                ]
+                ],
             ]);
 
         $this->assertDatabaseHas('users', [
             'email' => 'teste@teste.com',
         ]);
-    });
+    }
 
-    // test('user can register with a valid invitation', function () {
-    //     $invitation = Invitation::factory()->create(['status' => 'pending']);
+    public function test_user_can_register_with_a_valid_invitation(): void
+    {
+        $collection = \App\Models\Collection::factory()->create();
+        $invitation = Invitation::factory()->create([
+            'collection_id' => $collection->id,
+            'email' => 'teste2@example.com',
+            'status' => 'pending',
+        ]);
 
-    //     $response = $this->postJson(route('auth.register'), [
-    //         'full_name' => 'Teste 2',
-    //         'username' => 'teste2',
-    //         'email' => 'teste2@example.com',
-    //         'password' => '123456',
-    //         'password_confirmation' => '123456',
-    //         'token' => $invitation->token,
-    //     ]);
+        $response = $this->postJson(route('auth.register'), [
+            'full_name' => 'Teste 2',
+            'username' => 'teste2',
+            'email' => 'teste2@example.com',
+            'password' => '12345678',
+            'password_confirmation' => '12345678',
+            'token' => $invitation->token,
+        ]);
 
-    //     $response->assertCreated()
-    //         ->assertJsonStructure([
-    //             'data' => [
-    //                 'user' => ['id', 'full_name', 'username', 'email'],
-    //                 'token',
-    //             ]
-    //         ]);
+        $response->assertCreated()
+            ->assertJsonStructure([
+                'data' => [
+                    'user' => ['id', 'full_name', 'username', 'email'],
+                    'token',
+                ],
+            ]);
 
-    //     $this->assertDatabaseHas('invitations', [
-    //         'id' => $invitation->id,
-    //         'status' => 'accepted',
-    //     ]);
+        $this->assertDatabaseHas('invitations', [
+            'id' => $invitation->id,
+            'status' => 'accepted',
+        ]);
 
-    //     $userId = $response->json('user.id');
-    //     $user = User::find($userId);
+        $user = User::where('email', 'teste2@example.com')->firstOrFail();
 
-    //     expect($user->collections()->pluck('id'))->toContain($invitation->collection_id);
-    // });
-});
+        $this->assertTrue($user->collections()->where('collections.id', $collection->id)->exists());
+    }
 
-describe('login', function () {
-    test('user can login with valid credentials', function () {
+    public function test_user_can_login_with_valid_credentials(): void
+    {
         $password = 'password';
         $user = User::factory()->create([
             'password' => Hash::make($password),
@@ -81,11 +89,12 @@ describe('login', function () {
                 'data' => [
                     'token',
                     'token_type',
-                ]
+                ],
             ]);
-    });
+    }
 
-    test('user cannot login with invalid credentials', function () {
+    public function test_user_cannot_login_with_invalid_credentials(): void
+    {
         $user = User::factory()->create([
             'password' => Hash::make('password'),
         ]);
@@ -99,11 +108,10 @@ describe('login', function () {
             ->assertJson([
                 'message' => 'Invalid credentials',
             ]);
-    });
-});
+    }
 
-describe('logout', function () {
-    test('user can logout successfully', function () {
+    public function test_user_can_logout_successfully(): void
+    {
         $user = User::factory()->create();
 
         Auth::login($user);
@@ -114,5 +122,5 @@ describe('logout', function () {
             ->assertJson([
                 'message' => 'Logout successful',
             ]);
-    });
-});
+    }
+}

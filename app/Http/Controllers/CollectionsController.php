@@ -4,6 +4,8 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\CollectionAddUserRequest;
 use App\Http\Requests\CollectionCreateRequest;
+use App\Http\Resources\CollectionResource;
+use App\Http\Resources\InvitationResource;
 use App\Http\Services\CollectionService;
 use App\Models\Collection;
 use Illuminate\Http\Request;
@@ -21,13 +23,13 @@ class CollectionsController extends Controller
     {
         $collections = $this->service->filterPaginated($request, $request->user());
 
-        return $this->respond($collections);
+        return CollectionResource::collection($collections);
     }
 
     public function show(Request $request, Collection $collection)
     {
         if (!$collection->belongsToUser($request->user())) {
-            return $this->failForbidden('You are not authorized to access this collection');
+            abort(403, 'You are not authorized to access this collection');
         }
 
         $collection->load([
@@ -36,7 +38,7 @@ class CollectionsController extends Controller
             'goals' => fn($query) => $query->orderBy('order')
         ]);
 
-        return $this->respond($collection);
+        return new CollectionResource($collection);
     }
 
     public function store(CollectionCreateRequest $request)
@@ -46,29 +48,29 @@ class CollectionsController extends Controller
             'owner_id' => $request->user()->id,
         ]);
 
-        return $this->respondCreated($collection);
+        return (new CollectionResource($collection))->response()->setStatusCode(201);
     }
 
     public function update(CollectionCreateRequest $request, Collection $collection)
     {
         if (!$collection->belongsToUser($request->user(), owner_only: true)) {
-            return $this->failForbidden('Only the owner can update this collection');
+            abort(403, 'Only the owner can update this collection');
         }
 
         $collection->update($request->validated());
 
-        return $this->respondUpdated($collection);
+        return new CollectionResource($collection);
     }
 
     public function destroy(Request $request, Collection $collection)
     {
         if (!$collection->belongsToUser($request->user(), owner_only: true)) {
-            return $this->failForbidden('Only the owner can delete this collection');
+            abort(403, 'Only the owner can delete this collection');
         }
 
         $collection->delete();
 
-        return $this->respondDeleted();
+        return response()->json(['message' => 'Collection deleted']);
     }
 
     public function inviteUser(CollectionAddUserRequest $request, Collection $collection)
@@ -77,16 +79,16 @@ class CollectionsController extends Controller
         $user = $request->user();
 
         if (!$collection->belongsToUser($user, owner_only: true)) {
-            return $this->failForbidden('Only the owner can add users to this collection');
+            abort(403, 'Only the owner can add users to this collection');
         }
 
         if ($user->email === $validated['user_email']) {
-            return $this->failForbidden('You cannot invite yourself to your own collection');
+            abort(403, 'You cannot invite yourself to your own collection');
         }
 
         $invitation = $this->service->inviteUserToCollection($collection, $validated['user_email']);
 
-        return $this->respondCreated($invitation);
+        return (new InvitationResource($invitation))->response()->setStatusCode(201);
     }
 
     public function removeUser(CollectionAddUserRequest $request, Collection $collection)
@@ -94,11 +96,11 @@ class CollectionsController extends Controller
         $validated = $request->validated();
 
         if (!$collection->belongsToUser($request->user(), owner_only: true)) {
-            return $this->failForbidden('Only the owner can remove users from this collection');
+            abort(403, 'Only the owner can remove users from this collection');
         }
 
         $this->service->removeAndNotifyUser($collection, $validated['user_email']);
 
-        return $this->respondDeleted('User removed from collection', 200);
+        return response()->json(['message' => 'User removed from collection']);
     }
 }

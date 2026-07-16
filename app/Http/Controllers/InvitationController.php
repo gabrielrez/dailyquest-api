@@ -13,11 +13,11 @@ class InvitationController extends Controller
         $invitation = Invitation::where('token', $request->validated()['token'])->firstOrFail();
 
         if ($invitation->isExpired()) {
-            return $this->failForbidden('Invitation has expired');
+            abort(403, 'Invitation has expired');
         }
 
         if ($invitation->status === 'accepted') {
-            return $this->failConflict('Invitation already accepted');
+            abort(409, 'Invitation already accepted');
         }
 
         $invitation->update(['status' => 'accepted']);
@@ -25,6 +25,6 @@ class InvitationController extends Controller
         $user = User::where('email', $invitation->email)->firstOrFail();
         $invitation->collection->users()->attach($user->id);
 
-        return $this->respond('Invitation accepted');
+        return response()->json(['message' => 'Invitation accepted']);
     }
 }

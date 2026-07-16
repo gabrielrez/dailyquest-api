@@ -2,9 +2,6 @@
 
 namespace App\Http\Services;
 
-use App\Exceptions\ConflictException;
-use App\Exceptions\ForbiddenException;
-use App\Exceptions\NotFoundException;
 use App\Mail\InvitationMail;
 use App\Mail\UserRemovedMail;
 use App\Models\Collection;
@@ -74,7 +71,7 @@ class CollectionService
     private function ensureNotAlreadyInCollection(Collection $collection, string $email): void
     {
         if ($collection->users()->where('email', $email)->exists()) {
-            throw new ConflictException('User already in collection');
+            abort(409, 'User already in collection');
         }
     }
 
@@ -91,7 +88,7 @@ class CollectionService
         $pending = Invitation::findPending($collection, $email);
 
         if ($pending && !$pending->isExpired()) {
-            throw new ConflictException('User already has a pending invitation');
+            abort(409, 'User already has a pending invitation');
         }
 
         $pending?->delete();
@@ -149,15 +146,15 @@ class CollectionService
     public function removeAndNotifyUser(Collection $collection, string $email): void
     {
         if (!$user_to_remove = User::where('email', $email)->first()) {
-            throw new NotFoundException('User not found');
+            abort(404, 'User not found');
         }
 
         if (!$collection->belongsToUser($user_to_remove)) {
-            throw new ForbiddenException('The user is not a collaborator of this collection');
+            abort(403, 'The user is not a collaborator of this collection');
         }
 
         if ($collection->owner_id === $user_to_remove->id) {
-            throw new ForbiddenException('Owner cannot be removed from their own collection');
+            abort(403, 'Owner cannot be removed from their own collection');
         }
 
         $collection->users()->detach($user_to_remove->id);

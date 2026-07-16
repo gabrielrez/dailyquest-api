@@ -1,69 +1,80 @@
 <?php
 
+namespace Tests\Unit;
+
 use App\Http\Enums\InvitationStatusEnum;
 use App\Models\Collection;
 use App\Models\Invitation;
-use Illuminate\Support\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Carbon;
 use Tests\TestCase;
 
-uses(TestCase::class, RefreshDatabase::class);
+class InvitationTest extends TestCase
+{
+    use RefreshDatabase;
 
-test('invitation belongs to a collection', function () {
-    $collection = Collection::factory()->create();
-    $invitation = Invitation::factory()->for($collection)->create();
+    public function test_invitation_belongs_to_a_collection(): void
+    {
+        $collection = Collection::factory()->create();
+        $invitation = Invitation::factory()->for($collection)->create();
 
-    expect($invitation->collection)->toBeInstanceOf(Collection::class)
-        ->id->toBe($collection->id);
-});
+        $this->assertInstanceOf(Collection::class, $invitation->collection);
+        $this->assertSame($collection->id, $invitation->collection->id);
+    }
 
-test('isExpired returns true when expires_at is in the past', function () {
-    $invitation = Invitation::factory()->create([
-        'expires_at' => Carbon::now()->subDay(),
-    ]);
+    public function test_is_expired_returns_true_when_expires_at_is_in_the_past(): void
+    {
+        $invitation = Invitation::factory()->create([
+            'expires_at' => Carbon::now()->subDay(),
+        ]);
 
-    expect($invitation->isExpired())->toBeTrue();
-});
+        $this->assertTrue($invitation->isExpired());
+    }
 
-test('isExpired returns false when expires_at is in the future', function () {
-    $invitation = Invitation::factory()->create([
-        'expires_at' => Carbon::now()->addDay(),
-    ]);
+    public function test_is_expired_returns_false_when_expires_at_is_in_the_future(): void
+    {
+        $invitation = Invitation::factory()->create([
+            'expires_at' => Carbon::now()->addDay(),
+        ]);
 
-    expect($invitation->isExpired())->toBeFalse();
-});
+        $this->assertFalse($invitation->isExpired());
+    }
 
-test('findPending returns invitation if pending exists', function () {
-    $collection = Collection::factory()->create();
-    $invitation = Invitation::factory()->create([
-        'collection_id' => $collection->id,
-        'email' => 'test@example.com',
-        'status' => InvitationStatusEnum::PENDING,
-    ]);
+    public function test_find_pending_returns_invitation_if_pending_exists(): void
+    {
+        $collection = Collection::factory()->create();
+        $invitation = Invitation::factory()->create([
+            'collection_id' => $collection->id,
+            'email' => 'test@example.com',
+            'status' => InvitationStatusEnum::PENDING,
+        ]);
 
-    $found = Invitation::findPending($collection, 'test@example.com');
+        $found = Invitation::findPending($collection, 'test@example.com');
 
-    expect($found)->not->toBeNull()
-        ->id->toBe($invitation->id);
-});
+        $this->assertNotNull($found);
+        $this->assertSame($invitation->id, $found->id);
+    }
 
-test('findPending returns null if no pending invitation exists', function () {
-    $collection = Collection::factory()->create();
+    public function test_find_pending_returns_null_if_no_pending_invitation_exists(): void
+    {
+        $collection = Collection::factory()->create();
 
-    $found = Invitation::findPending($collection, 'notfound@example.com');
+        $found = Invitation::findPending($collection, 'notfound@example.com');
 
-    expect($found)->toBeNull();
-});
+        $this->assertNull($found);
+    }
 
-test('findPending does not return if invitation is not pending', function () {
-    $collection = Collection::factory()->create();
-    Invitation::factory()->create([
-        'collection_id' => $collection->id,
-        'email' => 'test@example.com',
-        'status' => InvitationStatusEnum::ACCEPTED,
-    ]);
+    public function test_find_pending_does_not_return_if_invitation_is_not_pending(): void
+    {
+        $collection = Collection::factory()->create();
+        Invitation::factory()->create([
+            'collection_id' => $collection->id,
+            'email' => 'test@example.com',
+            'status' => InvitationStatusEnum::ACCEPTED,
+        ]);
 
-    $found = Invitation::findPending($collection, 'test@example.com');
+        $found = Invitation::findPending($collection, 'test@example.com');
 
-    expect($found)->toBeNull();
-});
+        $this->assertNull($found);
+    }
+}

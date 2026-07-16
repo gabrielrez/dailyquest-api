@@ -1,5 +1,7 @@
 <?php
 
+namespace Tests\Unit;
+
 use App\Http\Enums\GoalStatusEnum;
 use App\Models\Collection;
 use App\Models\Goal;
@@ -8,114 +10,131 @@ use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
-uses(TestCase::class, RefreshDatabase::class);
+class CollectionTest extends TestCase
+{
+    use RefreshDatabase;
 
-test('collection belongs to an owner', function () {
-    $user = User::factory()->create();
-    $collection = Collection::factory()->for($user, 'owner')->create();
+    public function test_collection_belongs_to_an_owner(): void
+    {
+        $user = User::factory()->create();
+        $collection = Collection::factory()->for($user, 'owner')->create();
 
-    expect($collection->owner)->toBeInstanceOf(User::class)
-        ->id->toBe($user->id);
-});
+        $this->assertInstanceOf(User::class, $collection->owner);
+        $this->assertSame($user->id, $collection->owner->id);
+    }
 
-test('collection has many goals', function () {
-    $collection = Collection::factory()->hasGoals(3)->create();
+    public function test_collection_has_many_goals(): void
+    {
+        $collection = Collection::factory()->hasGoals(3)->create();
 
-    expect($collection->goals)->toHaveCount(3)
-        ->and($collection->goals->first())->toBeInstanceOf(Goal::class);
-});
+        $this->assertCount(3, $collection->goals);
+        $this->assertInstanceOf(Goal::class, $collection->goals->first());
+    }
 
-test('collection has many invitations', function () {
-    $collection = Collection::factory()->hasInvitations(2)->create();
+    public function test_collection_has_many_invitations(): void
+    {
+        $collection = Collection::factory()->hasInvitations(2)->create();
 
-    expect($collection->invitations)->toHaveCount(2)
-        ->and($collection->invitations->first())->toBeInstanceOf(Invitation::class);
-});
+        $this->assertCount(2, $collection->invitations);
+        $this->assertInstanceOf(Invitation::class, $collection->invitations->first());
+    }
 
-test('collection has many collaborating users', function () {
-    $user = User::factory()->create();
-    $collection = Collection::factory()->create();
+    public function test_collection_has_many_collaborating_users(): void
+    {
+        $user = User::factory()->create();
+        $collection = Collection::factory()->create();
 
-    $collection->users()->attach($user);
+        $collection->users()->attach($user);
 
-    expect($collection->users)->toHaveCount(1)
-        ->and($collection->users->first())->toBeInstanceOf(User::class);
-});
+        $this->assertCount(1, $collection->users);
+        $this->assertInstanceOf(User::class, $collection->users->first());
+    }
 
-test('belongsToUser returns true for owner', function () {
-    $user = User::factory()->create();
-    $collection = Collection::factory()->for($user, 'owner')->create();
+    public function test_belongs_to_user_returns_true_for_owner(): void
+    {
+        $user = User::factory()->create();
+        $collection = Collection::factory()->for($user, 'owner')->create();
 
-    expect($collection->belongsToUser($user))->toBeTrue();
-});
+        $this->assertTrue($collection->belongsToUser($user));
+    }
 
-test('belongsToUser returns true for collaborator', function () {
-    $user = User::factory()->create();
-    $collection = Collection::factory()->create();
-    $collection->users()->attach($user);
+    public function test_belongs_to_user_returns_true_for_collaborator(): void
+    {
+        $user = User::factory()->create();
+        $collection = Collection::factory()->create();
+        $collection->users()->attach($user);
 
-    expect($collection->belongsToUser($user))->toBeTrue();
-});
+        $this->assertTrue($collection->belongsToUser($user));
+    }
 
-test('belongsToUser returns false if not owner or collaborator', function () {
-    $user = User::factory()->create();
-    $collection = Collection::factory()->create();
+    public function test_belongs_to_user_returns_false_if_not_owner_or_collaborator(): void
+    {
+        $user = User::factory()->create();
+        $collection = Collection::factory()->create();
 
-    expect($collection->belongsToUser($user))->toBeFalse();
-});
+        $this->assertFalse($collection->belongsToUser($user));
+    }
 
-test('belongsToUser with owner_only = true returns false for collaborator', function () {
-    $user = User::factory()->create();
-    $collection = Collection::factory()->create();
-    $collection->users()->attach($user);
+    public function test_belongs_to_user_with_owner_only_true_returns_false_for_collaborator(): void
+    {
+        $user = User::factory()->create();
+        $collection = Collection::factory()->create();
+        $collection->users()->attach($user);
 
-    expect($collection->belongsToUser($user, owner_only: true))->toBeFalse();
-});
+        $this->assertFalse($collection->belongsToUser($user, owner_only: true));
+    }
 
-test('scopeOwnedBy filters by owner', function () {
-    $owner = User::factory()->create();
-    $other = User::factory()->create();
+    public function test_scope_owned_by_filters_by_owner(): void
+    {
+        $owner = User::factory()->create();
+        $other = User::factory()->create();
 
-    $owned = Collection::factory()->for($owner, 'owner')->create();
-    Collection::factory()->for($other, 'owner')->create();
+        $owned = Collection::factory()->for($owner, 'owner')->create();
+        Collection::factory()->for($other, 'owner')->create();
 
-    $result = Collection::ownedBy($owner->id)->get();
+        $result = Collection::ownedBy($owner->id)->get();
 
-    expect($result)->toHaveCount(1)
-        ->first()->id->toBe($owned->id);
-});
+        $this->assertCount(1, $result);
+        $this->assertSame($owned->id, $result->first()->id);
+    }
 
-test('scopeStatus filters by status', function () {
-    $in_progress = Collection::factory()->create(['status' => 'in_progress']);
-    Collection::factory()->create(['status' => 'completed']);
+    public function test_scope_status_filters_by_status(): void
+    {
+        $in_progress = Collection::factory()->create(['status' => 'in_progress']);
+        Collection::factory()->create(['status' => 'completed']);
 
-    $result = Collection::status('in_progress')->get();
+        $result = Collection::status('in_progress')->get();
 
-    expect($result)->toHaveCount(1)
-        ->first()->id->toBe($in_progress->id);
-});
+        $this->assertCount(1, $result);
+        $this->assertSame($in_progress->id, $result->first()->id);
+    }
 
-test('scopeForUser returns collections where user is owner or collaborator', function () {
-    $user = User::factory()->create();
-    $owned = Collection::factory()->for($user, 'owner')->create();
-    $collaborator = Collection::factory()->create();
-    $collaborator->users()->attach($user);
+    public function test_scope_for_user_returns_collections_where_user_is_owner_or_collaborator(): void
+    {
+        $user = User::factory()->create();
+        $owned = Collection::factory()->for($user, 'owner')->create();
+        $collaborator = Collection::factory()->create();
+        $collaborator->users()->attach($user);
 
-    $result = Collection::forUser($user->id)->get();
+        $result = Collection::forUser($user->id)->get();
 
-    expect($result->pluck('id'))->toContain($owned->id, $collaborator->id);
-});
+        $this->assertContains($owned->id, $result->pluck('id'));
+        $this->assertContains($collaborator->id, $result->pluck('id'));
+    }
 
-test('isCompleted returns true if all goals are DONE', function () {
-    $collection = Collection::factory()->create();
-    Goal::factory()->for($collection)->create(['status' => GoalStatusEnum::DONE]);
+    public function test_is_completed_returns_true_if_all_goals_are_done(): void
+    {
+        $collection = Collection::factory()->create();
+        Goal::factory()->for($collection)->create(['status' => GoalStatusEnum::DONE]);
 
-    expect($collection->isCompleted())->toBeTrue();
-});
+        $this->assertTrue($collection->isCompleted());
+    }
 
-test('isCompleted returns false if any goal is not DONE', function () {
-    $collection = Collection::factory()->create();
-    Goal::factory()->for($collection)->create(['status' => GoalStatusEnum::DOING]);
+    public function test_is_completed_returns_false_if_any_goal_is_not_done(): void
+    {
+        $collection = Collection::factory()->create();
+        Goal::factory()->for($collection)->create(['status' => GoalStatusEnum::DOING]);
 
-    expect($collection->isCompleted())->toBeFalse();
-});
+        $this->assertFalse($collection->isCompleted());
+    }
+}

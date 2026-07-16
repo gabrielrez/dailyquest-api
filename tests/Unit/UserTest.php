@@ -1,71 +1,95 @@
 <?php
 
-use App\Models\User;
+namespace Tests\Unit;
+
 use App\Models\Collection;
 use App\Models\Goal;
+use App\Models\Report;
+use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
-uses(TestCase::class, RefreshDatabase::class);
+class UserTest extends TestCase
+{
+    use RefreshDatabase;
 
-test('password is hashed', function () {
-    $user = User::factory()->create(['password' => 'secret']);
+    public function test_password_is_hashed(): void
+    {
+        $user = User::factory()->create(['password' => 'secret']);
 
-    expect($user->password)->not->toBe('secret')
-        ->and(password_verify('secret', $user->password))->toBeTrue();
-});
+        $this->assertNotSame('secret', $user->password);
+        $this->assertTrue(password_verify('secret', $user->password));
+    }
 
-test('user can have owned collections', function () {
-    $user = User::factory()->create();
-    $collection = Collection::factory()->create(['owner_id' => $user->id]);
+    public function test_user_can_have_owned_collections(): void
+    {
+        $user = User::factory()->create();
+        $collection = Collection::factory()->create(['owner_id' => $user->id]);
 
-    $owned_collections = $user->ownedCollections;
+        $owned_collections = $user->ownedCollections;
 
-    expect($owned_collections)->toHaveCount(1)
-        ->and($owned_collections->first()->id)->toBe($collection->id)
-        ->and($owned_collections->first()->owner_id)->toBe($user->id)
-        ->and($owned_collections->first())->toBeInstanceOf(Collection::class);
-});
+        $this->assertCount(1, $owned_collections);
+        $this->assertSame($collection->id, $owned_collections->first()->id);
+        $this->assertSame($user->id, $owned_collections->first()->owner_id);
+        $this->assertInstanceOf(Collection::class, $owned_collections->first());
+    }
 
-test('user can have collaborative collections', function () {
-    $user = User::factory()->create();
-    $collection = Collection::factory()->create();
+    public function test_user_can_have_collaborative_collections(): void
+    {
+        $user = User::factory()->create();
+        $collection = Collection::factory()->create();
 
-    $user->collections()->attach($collection->id);
+        $user->collections()->attach($collection->id);
 
-    $collections = $user->collections;
+        $collections = $user->collections;
 
-    expect($collections)->toHaveCount(1)
-        ->and($collections->first()->id)->toBe($collection->id)
-        ->and($collections->first()->owner_id)->not->toBe($user->id)
-        ->and($collections->first())->toBeInstanceOf(Collection::class);
-});
+        $this->assertCount(1, $collections);
+        $this->assertSame($collection->id, $collections->first()->id);
+        $this->assertNotSame($user->id, $collections->first()->owner_id);
+        $this->assertInstanceOf(Collection::class, $collections->first());
+    }
 
-test('user can have owned goals', function () {
-    $user = User::factory()->hasGoals(3)->create();
+    public function test_user_can_have_owned_goals(): void
+    {
+        $user = User::factory()->hasGoals(3)->create();
 
-    $goals = $user->goals;
+        $goals = $user->goals;
 
-    expect($goals)->toHaveCount(3)
-        ->and($goals->first()->owner_id)->toBe($user->id)
-        ->and($goals->first())->toBeInstanceOf(Goal::class);
-});
+        $this->assertCount(3, $goals);
+        $this->assertSame($user->id, $goals->first()->owner_id);
+        $this->assertInstanceOf(Goal::class, $goals->first());
+    }
 
-test('jwt identifier returns user id', function () {
-    $user = User::factory()->create();
+    public function test_user_can_have_reports(): void
+    {
+        $user = User::factory()->create();
+        $report = Report::factory()->create(['user_id' => $user->id]);
 
-    expect($user->getJWTIdentifier())->toBe($user->id);
-});
+        $reports = $user->reports;
 
-test('profile picture url returns null if no picture', function () {
-    $user = User::factory()->create(['profile_picture' => null]);
+        $this->assertCount(1, $reports);
+        $this->assertSame($report->id, $reports->first()->id);
+        $this->assertInstanceOf(Report::class, $reports->first());
+    }
 
-    expect($user->profile_picture_url)->toBeNull();
-});
+    public function test_jwt_identifier_returns_user_id(): void
+    {
+        $user = User::factory()->create();
 
+        $this->assertSame($user->id, $user->getJWTIdentifier());
+    }
 
-test('profile picture url returns full path when picture exists', function () {
-    $user = User::factory()->create(['profile_picture' => 'avatars/me.png']);
+    public function test_profile_picture_url_returns_null_if_no_picture(): void
+    {
+        $user = User::factory()->create(['profile_picture' => null]);
 
-    expect($user->profile_picture_url)->toBe(asset('storage/avatars/me.png'));
-});
+        $this->assertNull($user->profile_picture_url);
+    }
+
+    public function test_profile_picture_url_returns_full_path_when_picture_exists(): void
+    {
+        $user = User::factory()->create(['profile_picture' => 'avatars/me.png']);
+
+        $this->assertSame(asset('storage/avatars/me.png'), $user->profile_picture_url);
+    }
+}

@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\UserLoginRequest;
 use App\Http\Requests\UserRegisterRequest;
+use App\Http\Resources\UserResource;
 use App\Models\Invitation;
 use App\Models\User;
 use Illuminate\Support\Facades\Auth;
@@ -37,10 +38,12 @@ class AuthController extends Controller
             'password'  => $validated['password'],
         ]);
 
-        return $this->respondCreated([
-            'user'  => $user,
-            'token' => $token,
-        ]);
+        return response()->json([
+            'data' => [
+                'user' => new UserResource($user),
+                'token' => $token,
+            ],
+        ], 201);
     }
 
     public function login(UserLoginRequest $request)
@@ -51,12 +54,14 @@ class AuthController extends Controller
         ];
 
         if (!$token = Auth::attempt($credentials)) {
-            return $this->failUnauthorized('Invalid credentials');
+            abort(401, 'Invalid credentials');
         }
 
-        return $this->respond([
-            'token' => $token,
-            'token_type' => 'bearer',
+        return response()->json([
+            'data' => [
+                'token' => $token,
+                'token_type' => 'bearer',
+            ],
         ]);
     }
 
@@ -64,6 +69,6 @@ class AuthController extends Controller
     {
         Auth::logout();
 
-        return $this->respond('Logout successful');
+        return response()->json(['message' => 'Logout successful']);
     }
 }

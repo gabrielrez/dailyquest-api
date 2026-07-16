@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\ProfilePictureRequest;
 use App\Http\Requests\UserUpdateRequest;
+use App\Http\Resources\UserResource;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 
@@ -11,10 +12,7 @@ class UsersController extends Controller
 {
     public function profile(Request $request)
     {
-        $user = $request->user();
-        $user['profile_picture'] = $user->profile_picture_url;
-
-        return $this->respond($user);
+        return new UserResource($request->user());
     }
 
     public function updateProfile(UserUpdateRequest $request)
@@ -27,7 +25,7 @@ class UsersController extends Controller
             'username'
         ]));
 
-        return $this->respondUpdated($user);
+        return new UserResource($user);
     }
 
     public function uploadProfilePicture(ProfilePictureRequest $request)
@@ -35,7 +33,7 @@ class UsersController extends Controller
         $user = $request->user();
 
         if (!$request->hasFile('profile_picture')) {
-            return $this->failBadRequest('Missing profile picture');
+            abort(400, 'Missing profile picture');
         }
 
         if ($user->profile_picture && Storage::disk('public')->exists($user->profile_picture)) {
@@ -45,8 +43,8 @@ class UsersController extends Controller
         $path = $request->file('profile_picture')->store('profile_pictures', 'public');
         $user->update(['profile_picture' => $path]);
 
-        return $this->respondUpdated([
-            'profile_picture' => $user->profile_picture_url
+        return response()->json([
+            'data' => ['profile_picture' => $user->profile_picture_url],
         ]);
     }
 }
